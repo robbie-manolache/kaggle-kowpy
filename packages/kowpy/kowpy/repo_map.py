@@ -1,6 +1,4 @@
-import os
 from pathlib import Path
-from typing import List, Optional
 
 def map_directory(directory: str, indent: str = "  ", prefix: str = "") -> str:
     """
@@ -38,23 +36,3 @@ def map_directory(directory: str, indent: str = "  ", prefix: str = "") -> str:
         return "\n".join(filter(None, result))
     except Exception as e:
         return f"Error mapping directory: {str(e)}"
-
-def save_map_to_file(directory: str, output_file: str, indent: str = "  ") -> bool:
-    """
-    Maps a directory and saves the result to a file.
-    
-    Args:
-        directory (str): Path to the directory to map
-        output_file (str): Path where to save the map
-        indent (str): Indentation string for each level
-        
-    Returns:
-        bool: True if successful, False otherwise
-    """
-    try:
-        map_content = map_directory(directory, indent)
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(map_content)
-        return True
-    except Exception:
-        return False
