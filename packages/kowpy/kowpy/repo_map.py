@@ -64,8 +64,7 @@ def map_directory(
 
 
 def map_directory_json(
-    directory: str,
-    as_string: bool = False
+    directory: str, as_string: bool = False
 ) -> Union[Dict, str]:
     """
     Maps out the structure of a directory and returns it as a JSON object
@@ -80,24 +79,24 @@ def map_directory_json(
         Union[Dict, str]: A dictionary or JSON string representing the
             directory structure
     """
+
     def _build_tree(path: Path) -> Dict:
         result = {}
         try:
             items = sorted(
-                path.iterdir(),
-                key=lambda x: (not x.is_dir(), x.name.lower())
+                path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())
             )
-            
+
             for item in items:
                 if item.is_dir():
                     result[item.name] = _build_tree(item)
                 else:
                     result[item.name] = None
-                    
+
             return result
         except Exception as e:
             return {"error": str(e)}
-    
+
     try:
         tree = _build_tree(Path(directory))
         if as_string:
