@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def map_directory(directory: str, indent: str = "  ", prefix: str = "") -> str:
+def map_directory(directory: str, indent: str = "\t", prefix: str = "") -> str:
     """
     Maps out the structure of a directory and returns it as a formatted string.
 
