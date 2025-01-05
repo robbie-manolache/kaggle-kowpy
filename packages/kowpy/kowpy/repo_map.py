@@ -1,4 +1,6 @@
+import json
 from pathlib import Path
+from typing import Union, Dict
 
 
 def map_directory(
@@ -59,3 +61,50 @@ def map_directory(
         return "\n".join(filter(None, result))
     except Exception as e:
         return f"Error mapping directory: {str(e)}"
+
+
+def map_directory_json(
+    directory: str,
+    as_string: bool = False
+) -> Union[Dict, str]:
+    """
+    Maps out the structure of a directory and returns it as a JSON object
+    or formatted JSON string.
+
+    Args:
+        directory (str): Path to the directory to map
+        as_string (bool): If True, returns a formatted JSON string instead
+            of a Python dictionary
+
+    Returns:
+        Union[Dict, str]: A dictionary or JSON string representing the
+            directory structure
+    """
+    def _build_tree(path: Path) -> Dict:
+        result = {}
+        try:
+            items = sorted(
+                path.iterdir(),
+                key=lambda x: (not x.is_dir(), x.name.lower())
+            )
+            
+            for item in items:
+                if item.is_dir():
+                    result[item.name] = _build_tree(item)
+                else:
+                    result[item.name] = None
+                    
+            return result
+        except Exception as e:
+            return {"error": str(e)}
+    
+    try:
+        tree = _build_tree(Path(directory))
+        if as_string:
+            return json.dumps(tree, indent=2)
+        return tree
+    except Exception as e:
+        error_result = {"error": f"Error mapping directory: {str(e)}"}
+        if as_string:
+            return json.dumps(error_result)
+        return error_result
