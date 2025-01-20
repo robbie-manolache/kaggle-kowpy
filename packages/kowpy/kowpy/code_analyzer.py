@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 import pandas as pd
-from tree_sitter import Language as TSLanguage, Parser, Tree, Node
+from tree_sitter import Tree, Node
+from tree_sitter_languages import get_language, get_parser
 from .languages import Language
 
 
@@ -24,18 +25,15 @@ class CodeAnalyzer:
 
     def __init__(self):
         self.parsers: Dict[str, Parser] = {}
-        self.languages: Dict[str, TSLanguage] = {}
         self.file_extensions: Dict[str, Language] = {
             lang.extension: lang for lang in Language
         }
 
-    def add_language(self, language: Language, build_path: str):
-        """Add a new language parser"""
-        TSLanguage.build_library(build_path, [f"tree-sitter-{language.value}"])
-        self.languages[language.value] = TSLanguage(build_path, language.value)
-        parser = Parser()
-        parser.set_language(self.languages[language.value])
-        self.parsers[language.value] = parser
+    def _get_parser(self, language: str):
+        """Get or create parser for a language"""
+        if language not in self.parsers:
+            self.parsers[language] = get_parser(language)
+        return self.parsers[language]
 
     def _get_signature(self, node: Node, source_code: bytes) -> str:
         """Extract the signature of a code object"""
@@ -53,13 +51,11 @@ class CodeAnalyzer:
         self, file_path: Path, language: str
     ) -> List[CodeObject]:
         """Analyze a single file"""
-        if language not in self.parsers:
-            raise ValueError(f"Parser for language {language} not initialized")
-
         with open(file_path, "rb") as f:
             source_code = f.read()
 
-        tree = self.parsers[language].parse(source_code)
+        parser = self._get_parser(language.value)
+        tree = parser.parse(source_code)
         objects: List[CodeObject] = []
 
         def visit_node(node: Node, parent_name: Optional[str] = None):
@@ -126,7 +122,6 @@ class CodeAnalyzer:
 def analyze_codebase(
     directory: str,
     languages: Set[Language],
-    build_dir: str = "build/my-languages.so",
 ) -> pd.DataFrame:
     """
     Analyze a codebase for multiple languages and return a DataFrame
@@ -134,16 +129,11 @@ def analyze_codebase(
     Args:
         directory: Path to the codebase directory
         languages: Set of Language enum values to analyze
-        build_dir: Path where tree-sitter language files will be built
 
     Returns:
         DataFrame with columns: path, object_type, name, signature,
         start_line, end_line, parent
     """
     analyzer = CodeAnalyzer()
-
-    # Initialize parsers for requested languages
-    for lang in languages:
-        analyzer.add_language(lang, build_dir)
 
     return analyzer.analyze_directory(Path(directory))
