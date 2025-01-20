@@ -34,8 +34,8 @@ class CodeAnalyzer:
         TSLanguage.build_library(build_path, [f"tree-sitter-{language.value}"])
         self.languages[language.value] = TSLanguage(build_path, language.value)
         parser = Parser()
-        parser.set_language(self.languages[name])
-        self.parsers[name] = parser
+        parser.set_language(self.languages[language.value])
+        self.parsers[language.value] = parser
 
     def _get_signature(self, node: Node, source_code: bytes) -> str:
         """Extract the signature of a code object"""
