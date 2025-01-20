@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 import pandas as pd
-from tree_sitter import Language, Parser, Tree, Node
+from tree_sitter import Language as TSLanguage, Parser, Tree, Node
+from .languages import Language
 
 
 @dataclass
@@ -23,20 +24,15 @@ class CodeAnalyzer:
 
     def __init__(self):
         self.parsers: Dict[str, Parser] = {}
-        self.languages: Dict[str, Language] = {}
-        self.file_extensions: Dict[str, str] = {
-            ".py": "python",
-            ".js": "javascript",
-            ".ts": "typescript",
-            ".java": "java",
-            ".cpp": "cpp",
-            ".c": "c",
+        self.languages: Dict[str, TSLanguage] = {}
+        self.file_extensions: Dict[str, Language] = {
+            lang.extension: lang for lang in Language
         }
 
-    def add_language(self, name: str, build_path: str):
+    def add_language(self, language: Language, build_path: str):
         """Add a new language parser"""
-        Language.build_library(build_path, [f"tree-sitter-{name}"])
-        self.languages[name] = Language(build_path, name)
+        TSLanguage.build_library(build_path, [f"tree-sitter-{language.value}"])
+        self.languages[language.value] = TSLanguage(build_path, language.value)
         parser = Parser()
         parser.set_language(self.languages[name])
         self.parsers[name] = parser
@@ -129,7 +125,7 @@ class CodeAnalyzer:
 
 def analyze_codebase(
     directory: str,
-    languages: Set[str],
+    languages: Set[Language],
     build_dir: str = "build/my-languages.so",
 ) -> pd.DataFrame:
     """
@@ -137,7 +133,7 @@ def analyze_codebase(
 
     Args:
         directory: Path to the codebase directory
-        languages: Set of language names to analyze
+        languages: Set of Language enum values to analyze
         build_dir: Path where tree-sitter language files will be built
 
     Returns:
