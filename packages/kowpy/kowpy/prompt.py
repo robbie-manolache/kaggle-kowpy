@@ -60,15 +60,12 @@ class TextGenerator:
         )
         self.model_inputs = self.tokenizer([self.text], return_tensors="pt").to(self.model.device)
 
-    def generate(self, max_new_tokens: int = 512) -> str:
+    def generate(self, max_new_tokens: int = 512) -> None:
         """
         Generate text based on the prepared input.
         
         Args:
             max_new_tokens (int): Maximum number of tokens to generate
-            
-        Returns:
-            str: Generated response
         """
         if self.model_inputs is None:
             raise ValueError("Input not prepared. Call prepare_input first.")
@@ -85,5 +82,18 @@ class TextGenerator:
         self.response = self.tokenizer.batch_decode(
             self.generated_ids, 
             skip_special_tokens=True
-        )[0]
-        return self.response
+        )
+
+    def get_response(self, index: int = 0) -> str:
+        """
+        Get the generated response at the specified index.
+        
+        Args:
+            index (int): Index of the response to return (default: 0)
+            
+        Returns:
+            str: Generated response
+        """
+        if self.response is None:
+            raise ValueError("No response generated. Call generate first.")
+        return self.response[index]

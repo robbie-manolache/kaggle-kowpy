@@ -8,3 +8,4 @@ from kowpy.code_analyzer import (
     CodeAnalyzer,
     analyze_codebase,
 )
+from kowpy.prompt import TextGenerator
