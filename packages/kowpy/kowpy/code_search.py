@@ -3,8 +3,9 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import pandas as pd
+from .code_analyzer import CodeObject
 
 
 @dataclass
@@ -63,7 +64,11 @@ class CodeSearchMatcher:
             total_segments=total
         )
     
-    def match_against_df(self, df: pd.DataFrame, min_path_score: float = 0.5) -> pd.DataFrame:
+    def match_against_df(
+        self, 
+        df: Union[pd.DataFrame, List[CodeObject]], 
+        min_path_score: float = 0.5
+    ) -> pd.DataFrame:
         """
         Match search criteria against analyzed code DataFrame
         
@@ -74,6 +79,10 @@ class CodeSearchMatcher:
         Returns:
             DataFrame containing only matching rows
         """
+        # Convert to DataFrame if List[CodeObject] provided
+        if isinstance(df, list):
+            df = pd.DataFrame([vars(obj) for obj in df])
+            
         # Calculate path scores for all unique paths
         unique_paths = df['path'].unique()
         for path in unique_paths:
