@@ -71,7 +71,7 @@ class CodeSearchMatcher:
     def match_against_df(
         self,
         df: Union[pd.DataFrame, List[CodeObject]],
-        min_path_score: float = 0.5,
+        min_path_score: float = 0.0,
     ) -> pd.DataFrame:
         """
         Match search criteria against analyzed code DataFrame
