@@ -8,4 +8,5 @@ from kowpy.code_analyzer import (
     CodeAnalyzer,
     analyze_codebase,
 )
+from kowpy.code_search import CodeSearchMatcher
 from kowpy.prompt import TextGenerator
