@@ -95,10 +95,11 @@ class CodeAnalyzer:
                     if node.type == "class_definition":
                         for child in node.children:
                             visit_node(child, name)
-                    else:
-                        # For non-class nodes, visit all children
-                        for child in node.children:
-                            visit_node(child, parent_name)
+
+            # For all nodes (not just those with names), visit children
+            if node.type != "class_definition":  # Skip class children as they're handled above
+                for child in node.children:
+                    visit_node(child, parent_name)
 
         visit_node(tree.root_node)
         return objects
