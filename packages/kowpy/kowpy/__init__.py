@@ -10,3 +10,4 @@ from kowpy.code_analyzer import (
 )
 from kowpy.code_search import CodeSearchMatcher
 from kowpy.prompt import TextGenerator
+from kowpy.code_builder import CodeBuilder

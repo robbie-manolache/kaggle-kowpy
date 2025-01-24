@@ -1,20 +1,34 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Set
 import pandas as pd
+from .languages import Language
+from .code_analyzer import analyze_codebase
 
 
 class CodeBuilder:
     """Builds code strings from files using DataFrame analysis results"""
 
-    def __init__(self, analysis_df: Optional[pd.DataFrame] = None):
+    def __init__(
+        self,
+        analysis_df: Optional[pd.DataFrame] = None,
+        directory: Optional[str] = None,
+        languages: Optional[Set[Language]] = None,
+    ):
         """
-        Initialize CodeBuilder with optional analysis DataFrame
+        Initialize CodeBuilder with either a DataFrame or directory analysis
 
         Args:
             analysis_df: DataFrame with columns: path, start_line, end_line
                         (Optional - can be provided later via set_dataframe)
+            directory: Path to code directory to analyze (Optional)
+            languages: Set of Language enum values to analyze (Required if directory provided)
         """
-        self.df = analysis_df
+        if directory is not None:
+            if languages is None:
+                raise ValueError("languages must be provided when using directory")
+            self.df = analyze_codebase(directory, languages)
+        else:
+            self.df = analysis_df
         self._validate_df_schema()
 
     def _validate_df_schema(self) -> None:
