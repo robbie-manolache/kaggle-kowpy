@@ -91,14 +91,14 @@ class CodeAnalyzer:
                         )
                     )
 
-                    # If it's a class, visit its methods class name as parent
+                    # If it's a class, visit its methods with class name as parent
                     if node.type == "class_definition":
                         for child in node.children:
                             visit_node(child, name)
-
-            # Visit all children
-            for child in node.children:
-                visit_node(child, parent_name)
+                    else:
+                        # For non-class nodes, visit all children
+                        for child in node.children:
+                            visit_node(child, parent_name)
 
         visit_node(tree.root_node)
         return objects
