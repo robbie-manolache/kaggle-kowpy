@@ -72,7 +72,7 @@ class CodeSearchMatcher:
         self,
         df: Union[pd.DataFrame, List[CodeObject]],
         min_path_score: float = 0.0,
-        root_dir: Optional[str] = None,
+        directory: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Match search criteria against analyzed code DataFrame
@@ -80,7 +80,7 @@ class CodeSearchMatcher:
         Args:
             df: DataFrame from CodeAnalyzer
             min_path_score: Minimum path match score (0-1) to include results
-            root_dir: Optional root directory to strip from paths before matching
+            directory: Optional root directory to strip from paths before matching
 
         Returns:
             DataFrame containing only matching rows
@@ -92,10 +92,10 @@ class CodeSearchMatcher:
         # Calculate path scores for all unique paths
         unique_paths = df["path"].unique()
         for path in unique_paths:
-            # Strip root_dir from path if provided
+            # Strip directory from path if provided
             match_path = str(Path(path))
-            if root_dir:
-                root_dir_path = str(Path(root_dir))
+            if directory:
+                root_dir_path = str(Path(directory))
                 if match_path.startswith(root_dir_path):
                     match_path = match_path[len(root_dir_path):].lstrip('/\\')
             best_score = 0
