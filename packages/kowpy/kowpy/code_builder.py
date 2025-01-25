@@ -192,7 +192,7 @@ class CodeBuilder:
         result = []
         current_line = 1
         
-        for _, row in file_rows.iterrows():
+        for idx, (_, row) in enumerate(file_rows.iterrows()):
             # Add any lines before this block
             if current_line < row['start_line']:
                 result.extend(lines[current_line-1:row['start_line']-1])
@@ -205,9 +205,15 @@ class CodeBuilder:
                 
             current_line = row['end_line'] + 1
             
-        # Add any remaining lines
-        if current_line <= len(lines):
-            result.extend(lines[current_line-1:])
+            # If there's a next row, only include lines up to its start
+            if idx < len(file_rows) - 1:
+                next_start = file_rows.iloc[idx + 1]['start_line']
+                if current_line < next_start:
+                    result.extend(lines[current_line-1:next_start-1])
+                    current_line = next_start
+            # For the last object, include all remaining lines
+            elif current_line <= len(lines):
+                result.extend(lines[current_line-1:])
             
         return ''.join(result)
 
