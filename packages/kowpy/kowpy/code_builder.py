@@ -21,11 +21,14 @@ class CodeBuilder:
             analysis_df: DataFrame with columns: path, start_line, end_line
                         (Optional - can be provided later via set_dataframe)
             directory: Path to code directory to analyze (Optional)
-            languages: Set of Language enum values to analyze (Required if directory provided)
+            languages: Set of Language enum values to analyze
+                        (Required if directory provided)
         """
         if directory is not None:
             if languages is None:
-                raise ValueError("languages must be provided when using directory")
+                raise ValueError(
+                    "languages must be provided when using directory"
+                )
             self.df = analyze_codebase(directory, languages)
         else:
             self.df = analysis_df
@@ -34,7 +37,7 @@ class CodeBuilder:
     def _validate_df_schema(self) -> None:
         """Validate DataFrame has required columns"""
         if self.df is not None:
-            required_cols = {'path', 'start_line', 'end_line'}
+            required_cols = {"path", "start_line", "end_line"}
             missing = required_cols - set(self.df.columns)
             if missing:
                 raise ValueError(
@@ -85,14 +88,14 @@ class CodeBuilder:
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         if start_line is None or end_line is None:
-            return ''.join(lines)
+            return "".join(lines)
 
         self._validate_line_range(start_line, end_line, len(lines))
-        return ''.join(lines[start_line - 1 : end_line])
+        return "".join(lines[start_line - 1 : end_line])
 
     def extract_object(self, index: int) -> str:
         """
@@ -106,13 +109,11 @@ class CodeBuilder:
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
-        
+
         if not 0 <= index < len(self.df):
             raise IndexError(f"Index {index} out of bounds")
 
         row = self.df.iloc[index]
         return self.extract_code(
-            row['path'],
-            row['start_line'],
-            row['end_line']
+            row["path"], row["start_line"], row["end_line"]
         )

@@ -80,7 +80,7 @@ class CodeSearchMatcher:
         Args:
             df: DataFrame from CodeAnalyzer
             min_path_score: Minimum path match score (0-1) to include results
-            directory: Optional root directory to strip from paths before matching
+            directory: Optional directory to strip from paths before matching
 
         Returns:
             DataFrame containing only matching rows
@@ -97,7 +97,7 @@ class CodeSearchMatcher:
             if directory:
                 root_dir_path = str(Path(directory))
                 if match_path.startswith(root_dir_path):
-                    match_path = match_path[len(root_dir_path):].lstrip('/\\')
+                    match_path = match_path[len(root_dir_path) :].lstrip("/\\")
             best_score = 0
             best_match = None
 

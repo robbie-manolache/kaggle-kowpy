@@ -91,13 +91,14 @@ class CodeAnalyzer:
                         )
                     )
 
-                    # If it's a class, visit its methods with class name as parent
+                    # for a class, visit its methods with class name as parent
                     if node.type == "class_definition":
                         for child in node.children:
                             visit_node(child, name)
 
             # For all nodes (not just those with names), visit children
-            if node.type != "class_definition":  # Skip class children as they're handled above
+            # But skip class children as they're handled above
+            if node.type != "class_definition":
                 for child in node.children:
                     visit_node(child, parent_name)
 
