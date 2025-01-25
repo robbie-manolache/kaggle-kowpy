@@ -14,6 +14,7 @@ class CodeBuilder:
         directory: Optional[str] = None,
         languages: Optional[Set[Language]] = None,
     ):
+        self.modified_blocks = {}  # Dictionary to store modified code blocks
         """
         Initialize CodeBuilder with either a DataFrame or directory analysis
 
@@ -117,3 +118,94 @@ class CodeBuilder:
         return self.extract_code(
             row["path"], row["start_line"], row["end_line"]
         )
+
+    def _validate_indentation(self, original_code: str, modified_code: str) -> bool:
+        """
+        Validate that modified code maintains proper indentation structure
+        
+        Args:
+            original_code: Original code string
+            modified_code: Modified code string
+            
+        Returns:
+            True if indentation is valid, False otherwise
+        """
+        def get_base_indent(code: str) -> int:
+            lines = code.splitlines()
+            for line in lines:
+                if line.strip():
+                    return len(line) - len(line.lstrip())
+            return 0
+            
+        orig_indent = get_base_indent(original_code)
+        mod_indent = get_base_indent(modified_code)
+        return orig_indent == mod_indent
+
+    def store_modified_block(self, index: int, modified_code: str) -> None:
+        """
+        Store a modified code block for a specific DataFrame index
+        
+        Args:
+            index: Integer index in the analysis DataFrame
+            modified_code: Modified code string to store
+        """
+        if self.df is None:
+            raise ValueError("No DataFrame has been provided")
+            
+        if not 0 <= index < len(self.df):
+            raise IndexError(f"Index {index} out of bounds")
+            
+        original_code = self.extract_object(index)
+        if not self._validate_indentation(original_code, modified_code):
+            raise ValueError("Modified code must maintain original indentation structure")
+            
+        self.modified_blocks[index] = modified_code
+
+    def compile_file_code(self, file_path: Union[str, Path], use_modifications: bool = False) -> str:
+        """
+        Compile code string for an entire file, optionally using stored modifications
+        
+        Args:
+            file_path: Path to the source file
+            use_modifications: If True, incorporates stored modifications
+            
+        Returns:
+            Complete file contents as a string, with any modifications applied
+        """
+        if self.df is None:
+            raise ValueError("No DataFrame has been provided")
+            
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+            
+        if not use_modifications:
+            return self.extract_code(file_path)
+            
+        # Get all rows for this file
+        file_rows = self.df[self.df['path'] == str(path)].sort_values('start_line')
+        
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+        result = []
+        current_line = 1
+        
+        for _, row in file_rows.iterrows():
+            # Add any lines before this block
+            if current_line < row['start_line']:
+                result.extend(lines[current_line-1:row['start_line']-1])
+                
+            # Add either modified or original block
+            if _ in self.modified_blocks:
+                result.append(self.modified_blocks[_])
+            else:
+                result.extend(lines[row['start_line']-1:row['end_line']])
+                
+            current_line = row['end_line'] + 1
+            
+        # Add any remaining lines
+        if current_line <= len(lines):
+            result.extend(lines[current_line-1:])
+            
+        return ''.join(result)
