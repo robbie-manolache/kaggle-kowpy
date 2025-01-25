@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union, Set
 import pandas as pd
+from difflib import unified_diff
 from .languages import Language
 from .code_analyzer import analyze_codebase
 
@@ -209,3 +210,31 @@ class CodeBuilder:
             result.extend(lines[current_line-1:])
             
         return ''.join(result)
+
+    def get_modifications_diff(self, file_path: Union[str, Path], context_lines: int = 3) -> str:
+        """
+        Generate unified diff between original and modified versions of a file
+        
+        Args:
+            file_path: Path to the source file
+            context_lines: Number of context lines in the diff output (default=3)
+            
+        Returns:
+            String containing the unified diff
+        """
+        path = Path(file_path)
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+            
+        original = self.compile_file_code(path, use_modifications=False)
+        modified = self.compile_file_code(path, use_modifications=True)
+        
+        diff = unified_diff(
+            original.splitlines(keepends=True),
+            modified.splitlines(keepends=True),
+            fromfile=str(path),
+            tofile=f"{path} (modified)",
+            n=context_lines
+        )
+        
+        return ''.join(diff)
