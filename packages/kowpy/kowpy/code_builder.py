@@ -120,24 +120,27 @@ class CodeBuilder:
             row["path"], row["start_line"], row["end_line"]
         )
 
-    def _validate_indentation(self, original_code: str, modified_code: str) -> bool:
+    def _validate_indentation(
+        self, original_code: str, modified_code: str
+    ) -> bool:
         """
         Validate that modified code maintains proper indentation structure
-        
+
         Args:
             original_code: Original code string
             modified_code: Modified code string
-            
+
         Returns:
             True if indentation is valid, False otherwise
         """
+
         def get_base_indent(code: str) -> int:
             lines = code.splitlines()
             for line in lines:
                 if line.strip():
                     return len(line) - len(line.lstrip())
             return 0
-            
+
         orig_indent = get_base_indent(original_code)
         mod_indent = get_base_indent(modified_code)
         return orig_indent == mod_indent
@@ -145,102 +148,110 @@ class CodeBuilder:
     def store_modified_block(self, index: int, modified_code: str) -> None:
         """
         Store a modified code block for a specific DataFrame index
-        
+
         Args:
             index: Integer index in the analysis DataFrame
             modified_code: Modified code string to store
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
-            
+
         if not 0 <= index < len(self.df):
             raise IndexError(f"Index {index} out of bounds")
-            
+
         original_code = self.extract_object(index)
         if not self._validate_indentation(original_code, modified_code):
-            raise ValueError("Modified code must maintain original indentation structure")
-            
+            raise ValueError(
+                "Modified code must maintain original indentation structure"
+            )
+
         self.modified_blocks[index] = modified_code
 
-    def compile_file_code(self, file_path: Union[str, Path], use_modifications: bool = False) -> str:
+    def compile_file_code(
+        self, file_path: Union[str, Path], use_modifications: bool = False
+    ) -> str:
         """
-        Compile code string for an entire file, optionally using stored modifications
-        
+        Compile code string for a file, optionally using stored modifications
+
         Args:
             file_path: Path to the source file
             use_modifications: If True, incorporates stored modifications
-            
+
         Returns:
             Complete file contents as a string, with any modifications applied
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
-            
+
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-            
+
         if not use_modifications:
             return self.extract_code(file_path)
-            
+
         # Get all rows for this file
-        file_rows = self.df[self.df['path'] == str(path)].sort_values('start_line')
-        
+        file_rows = self.df[self.df["path"] == str(path)].sort_values(
+            "start_line"
+        )
+
         with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
-            
+
         result = []
         current_line = 1
-        
+
         for idx, (_, row) in enumerate(file_rows.iterrows()):
             # Add any lines before this block
-            if current_line < row['start_line']:
-                result.extend(lines[current_line-1:row['start_line']-1])
-                
+            if current_line < row["start_line"]:
+                result.extend(lines[current_line - 1 : row["start_line"] - 1])
+
             # Add either modified or original block
             if _ in self.modified_blocks:
                 result.append(self.modified_blocks[_])
             else:
-                result.extend(lines[row['start_line']-1:row['end_line']])
-                
-            current_line = row['end_line'] + 1
-            
+                result.extend(lines[row["start_line"] - 1 : row["end_line"]])
+
+            current_line = row["end_line"] + 1
+
             # If there's a next row, only include lines up to its start
             if idx < len(file_rows) - 1:
-                next_start = file_rows.iloc[idx + 1]['start_line']
+                next_start = file_rows.iloc[idx + 1]["start_line"]
                 if current_line < next_start:
-                    result.extend(lines[current_line-1:next_start-1])
+                    result.extend(lines[current_line - 1 : next_start - 1])
                     current_line = next_start
             # For the last object, include all remaining lines
             elif current_line <= len(lines):
-                result.extend(lines[current_line-1:])
-            
-        return ''.join(result)
+                result.extend(lines[current_line - 1 :])
 
-    def get_modifications_diff(self, file_path: Union[str, Path], context_lines: int = 3) -> str:
+        return "".join(result)
+
+    def get_modifications_diff(
+        self, file_path: Union[str, Path], context_lines: int = 3
+    ) -> str:
         """
         Generate unified diff between original and modified versions of a file
-        
+
         Args:
             file_path: Path to the source file
-            context_lines: Number of context lines in the diff output (default=3)
-            
+            context_lines: Number of context lines in diff output (default=3)
+
         Returns:
             String containing the unified diff
         """
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
-            
+
         original = self.compile_file_code(path, use_modifications=False)
         modified = self.compile_file_code(path, use_modifications=True)
-        
+
         diff = unified_diff(
             original.splitlines(keepends=True),
             modified.splitlines(keepends=True),
             fromfile=str(path),
             tofile=f"{path} (modified)",
-            n=context_lines
+            n=context_lines,
         )
-        
-        return ''.join(diff)
+
+        return "".join(diff)
