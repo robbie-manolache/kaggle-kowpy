@@ -8,11 +8,11 @@ from .code_analyzer import CodeObject
 
 EXAMPLE = """
 ```json
-{
+[
     {"file": "path/to/file1.py", "object": "my_function_1", "line": 250},
     {"file": "path/to/file1.py", "object": "my_function_2", "line": 212},
-    {"file": "path/to/file2.py", "object": "my_function_3", "line": 518},
-}
+    {"file": "path/to/file2.py", "object": "my_function_3", "line": 518}
+]
 ```
 """
 
@@ -51,9 +51,7 @@ class CodeSearchMatcher:
             json_text = json_match.group(1)
 
         search_data = json.loads(json_text)
-        self.search_files = search_data.get("files", [])
-        self.search_objects = search_data.get("objects", [])
-
+        self.search_targets = search_data if isinstance(search_data, list) else []
         self.matches_df: Optional[pd.DataFrame] = None
         self.path_scores: Dict[str, MatchScore] = {}
 
@@ -99,37 +97,38 @@ class CodeSearchMatcher:
         if isinstance(df, list):
             df = pd.DataFrame([vars(obj) for obj in df])
 
-        # Calculate path scores for all unique paths
-        unique_paths = df["path"].unique()
-        for path in unique_paths:
-            # Strip directory from path if provided
-            match_path = str(Path(path))
-            if directory:
-                root_dir_path = str(Path(directory))
-                if match_path.startswith(root_dir_path):
-                    match_path = match_path[len(root_dir_path) :].lstrip("/\\")
-            best_score = 0
-            best_match = None
+        matches = []
+        
+        for target in self.search_targets:
+            search_path = target["file"]
+            search_object = target["object"]
+            search_line = target["line"]
+            
+            # Find matching rows for this target
+            for _, row in df.iterrows():
+                path = str(Path(row["path"]))
+                if directory:
+                    root_dir_path = str(Path(directory))
+                    if path.startswith(root_dir_path):
+                        path = path[len(root_dir_path):].lstrip("/\\")
+                
+                # Calculate path match score
+                score = self._calculate_path_score(path, search_path)
+                if score.score >= min_path_score:
+                    # Check if object name matches
+                    if row["name"] == search_object:
+                        # Store the score for this path
+                        self.path_scores[row["path"]] = score
+                        matches.append({
+                            **row,
+                            "path_match_score": score.score,
+                            "line_match": (
+                                row["start_line"] <= search_line <= row["end_line"]
+                                if "start_line" in row and "end_line" in row
+                                else False
+                            )
+                        })
 
-            # Find best matching search path
-            for search_path in self.search_files:
-                score = self._calculate_path_score(match_path, search_path)
-                if score.score > best_score:
-                    best_score = score.score
-                    best_match = score
-
-            if best_match and best_score >= min_path_score:
-                self.path_scores[path] = best_match
-
-        # Filter DataFrame to matching paths and objects
-        path_mask = df["path"].isin(self.path_scores.keys())
-        object_mask = df["name"].isin(self.search_objects)
-
-        self.matches_df = df[path_mask & object_mask].copy()
-
-        # Add score column
-        self.matches_df["path_match_score"] = self.matches_df["path"].map(
-            lambda x: self.path_scores[x].score
-        )
+        self.matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
 
         return self.matches_df
