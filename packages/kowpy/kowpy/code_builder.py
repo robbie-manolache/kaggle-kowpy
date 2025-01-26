@@ -195,6 +195,13 @@ class CodeBuilder:
             "start_line"
         )
 
+        # Adjust any overlapping end_lines
+        for i in range(len(file_rows) - 1):
+            current_end = file_rows.iloc[i]["end_line"]
+            next_start = file_rows.iloc[i + 1]["start_line"]
+            if current_end > next_start:
+                file_rows.iloc[i, file_rows.columns.get_loc("end_line")] = next_start - 1
+
         with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
