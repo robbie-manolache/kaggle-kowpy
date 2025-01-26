@@ -249,8 +249,8 @@ class CodeBuilder:
         diff = unified_diff(
             original.splitlines(keepends=True),
             modified.splitlines(keepends=True),
-            fromfile=str(path),
-            tofile=f"{path} (modified)",
+            fromfile=f"a/{path}",
+            tofile=f"b/{path}",
             n=context_lines,
         )
 
