@@ -51,7 +51,9 @@ class CodeSearchMatcher:
             json_text = json_match.group(1)
 
         search_data = json.loads(json_text)
-        self.search_targets = search_data if isinstance(search_data, list) else []
+        self.search_targets = (
+            search_data if isinstance(search_data, list) else []
+        )
         self.matches_df: Optional[pd.DataFrame] = None
         self.path_scores: Dict[str, MatchScore] = {}
 
@@ -98,20 +100,20 @@ class CodeSearchMatcher:
             df = pd.DataFrame([vars(obj) for obj in df])
 
         matches = []
-        
+
         for target in self.search_targets:
             search_path = target["file"]
             search_object = target["object"]
             search_line = target["line"]
-            
+
             # Find matching rows for this target
             for _, row in df.iterrows():
                 path = str(Path(row["path"]))
                 if directory:
                     root_dir_path = str(Path(directory))
                     if path.startswith(root_dir_path):
-                        path = path[len(root_dir_path):].lstrip("/\\")
-                
+                        path = path[len(root_dir_path) :].lstrip("/\\")
+
                 # Calculate path match score
                 score = self._calculate_path_score(path, search_path)
                 if score.score >= min_path_score:
@@ -119,15 +121,20 @@ class CodeSearchMatcher:
                     if row["name"] == search_object:
                         # Store the score for this path
                         self.path_scores[row["path"]] = score
-                        matches.append({
-                            **row,
-                            "path_match_score": score.score,
-                            "line_match": (
-                                row["start_line"] <= search_line <= row["end_line"]
-                                if "start_line" in row and "end_line" in row
-                                else False
-                            )
-                        })
+                        matches.append(
+                            {
+                                **row,
+                                "path_match_score": score.score,
+                                "line_match": (
+                                    row["start_line"]
+                                    <= search_line
+                                    <= row["end_line"]
+                                    if "start_line" in row
+                                    and "end_line" in row
+                                    else False
+                                ),
+                            }
+                        )
 
         self.matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
 
