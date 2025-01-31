@@ -28,11 +28,20 @@ class CodeAnalyzer:
         self.file_extensions: Dict[str, Language] = {
             lang.extension: lang for lang in Language
         }
-        self.current_tree: Optional[Tree] = None
+        self.trees: Dict[str, Tree] = {}
 
-    def get_current_tree(self) -> Optional[Tree]:
-        """Get the most recently parsed syntax tree"""
-        return self.current_tree
+    def get_current_tree(self, file_path: str | Path) -> Optional[Tree]:
+        """
+        Get the syntax tree for a specific file
+
+        Args:
+            file_path: Path to the file whose tree to retrieve
+
+        Returns:
+            The syntax tree for the file if it exists, None otherwise
+        """
+        path_str = str(file_path)
+        return self.trees.get(path_str)
 
     def _get_parser(self, language: str):
         """Get or create parser for a language"""
@@ -60,8 +69,8 @@ class CodeAnalyzer:
             source_code = f.read()
 
         parser = self._get_parser(language.value)
-        self.current_tree = parser.parse(source_code)
-        tree = self.current_tree
+        tree = parser.parse(source_code)
+        self.trees[str(file_path)] = tree
         objects: List[CodeObject] = []
 
         def visit_node(node: Node, parent_name: Optional[str] = None):
@@ -123,8 +132,10 @@ class CodeAnalyzer:
             path, object_type, name, signature,
             start_line, end_line, parent, node_id
         """
+        # Clear existing trees before starting new analysis
+        self.trees.clear()
         code_objects: List[CodeObject] = []
-
+        
         dir_path = Path(directory) if isinstance(directory, str) else directory
         for file_path in dir_path.rglob("*"):
             if file_path.suffix in self.file_extensions:
