@@ -30,7 +30,7 @@ class CodeAnalyzer:
         }
         self.trees: Dict[str, Tree] = {}
 
-    def get_current_tree(self, file_path: str | Path) -> Optional[Tree]:
+    def get_tree_for(self, file_path: str | Path) -> Optional[Tree]:
         """
         Get the syntax tree for a specific file
 
