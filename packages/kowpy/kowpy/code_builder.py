@@ -112,7 +112,7 @@ class CodeBuilder:
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        row = self.df[self.df['node_id'] == node_id]
+        row = self.df[self.df["node_id"] == node_id]
         if row.empty:
             raise ValueError(f"No object found with node_id {node_id}")
 
@@ -157,7 +157,7 @@ class CodeBuilder:
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        if node_id not in self.df['node_id'].values:
+        if node_id not in self.df["node_id"].values:
             raise ValueError(f"No object found with node_id {node_id}")
 
         original_code = self.extract_object(node_id)
@@ -210,7 +210,7 @@ class CodeBuilder:
         result = []
         current_line = 1
 
-        for idx, row in enumerate(file_rows.itertuples()):
+        for idx, (_, row) in enumerate(file_rows.iterrows()):
             # Add any lines before this block
             if current_line < row["start_line"]:
                 result.extend(lines[current_line - 1 : row["start_line"] - 1])

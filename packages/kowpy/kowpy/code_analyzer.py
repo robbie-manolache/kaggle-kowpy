@@ -135,7 +135,7 @@ class CodeAnalyzer:
         # Clear existing trees before starting new analysis
         self.trees.clear()
         code_objects: List[CodeObject] = []
-        
+
         dir_path = Path(directory) if isinstance(directory, str) else directory
         for file_path in dir_path.rglob("*"):
             if file_path.suffix in self.file_extensions:
