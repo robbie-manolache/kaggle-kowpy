@@ -120,7 +120,8 @@ class CodeAnalyzer:
 
         Returns:
             DataFrame containing analyzed code objects with columns:
-            path, object_type, name, signature, start_line, end_line, parent, node_id
+            path, object_type, name, signature,
+            start_line, end_line, parent, node_id
         """
         code_objects: List[CodeObject] = []
 
