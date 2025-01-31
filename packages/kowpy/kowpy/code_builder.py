@@ -99,12 +99,12 @@ class CodeBuilder:
         self._validate_line_range(start_line, end_line, len(lines))
         return "".join(lines[start_line - 1 : end_line])
 
-    def extract_object(self, index: int) -> str:
+    def extract_object(self, node_id: int) -> str:
         """
         Extract code for a specific object from the analysis DataFrame
 
         Args:
-            index: Integer index of the object in the DataFrame
+            node_id: The node_id of the object in the DataFrame
 
         Returns:
             String containing the extracted code with original indentation
@@ -112,10 +112,11 @@ class CodeBuilder:
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        if not 0 <= index < len(self.df):
-            raise IndexError(f"Index {index} out of bounds")
+        row = self.df[self.df['node_id'] == node_id]
+        if row.empty:
+            raise ValueError(f"No object found with node_id {node_id}")
 
-        row = self.df.iloc[index]
+        row = row.iloc[0]
         return self.extract_code(
             row["path"], row["start_line"], row["end_line"]
         )
@@ -145,27 +146,27 @@ class CodeBuilder:
         mod_indent = get_base_indent(modified_code)
         return orig_indent == mod_indent
 
-    def store_modified_block(self, index: int, modified_code: str) -> None:
+    def store_modified_block(self, node_id: int, modified_code: str) -> None:
         """
-        Store a modified code block for a specific DataFrame index
+        Store a modified code block for a specific node_id
 
         Args:
-            index: Integer index in the analysis DataFrame
+            node_id: The node_id of the object in the DataFrame
             modified_code: Modified code string to store
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        if not 0 <= index < len(self.df):
-            raise IndexError(f"Index {index} out of bounds")
+        if node_id not in self.df['node_id'].values:
+            raise ValueError(f"No object found with node_id {node_id}")
 
-        original_code = self.extract_object(index)
+        original_code = self.extract_object(node_id)
         if not self._validate_indentation(original_code, modified_code):
             raise ValueError(
                 "Modified code must maintain original indentation structure"
             )
 
-        self.modified_blocks[index] = modified_code
+        self.modified_blocks[node_id] = modified_code
 
     def compile_file_code(
         self, file_path: Union[str, Path], use_modifications: bool = False
@@ -209,14 +210,14 @@ class CodeBuilder:
         result = []
         current_line = 1
 
-        for idx, (_, row) in enumerate(file_rows.iterrows()):
+        for idx, row in enumerate(file_rows.itertuples()):
             # Add any lines before this block
             if current_line < row["start_line"]:
                 result.extend(lines[current_line - 1 : row["start_line"] - 1])
 
             # Add either modified or original block
-            if _ in self.modified_blocks:
-                result.append(self.modified_blocks[_])
+            if row.node_id in self.modified_blocks:
+                result.append(self.modified_blocks[row.node_id])
             else:
                 result.extend(lines[row["start_line"] - 1 : row["end_line"]])
 
