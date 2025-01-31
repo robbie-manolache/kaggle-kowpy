@@ -125,7 +125,7 @@ class CodeAnalyzer:
                     print(f"Error analyzing {file_path}: {e}")
 
         df = pd.DataFrame([vars(obj) for obj in code_objects])
-        df['node_id'] = df.index
+        df["node_id"] = df.index
         return df
 
 
