@@ -5,6 +5,25 @@ from difflib import unified_diff
 from .languages import Language
 from .code_analyzer import analyze_codebase
 
+EXAMPLE = """
+Here is your solution
+
+### Snippet 0
+```python
+def hello_world():
+    print("Hello World!")
+```
+
+### Snippet 5
+```python
+potato = 42
+if potato == 42:
+    print("You're awesome")
+```
+
+Hope this `python` code makes you happy.
+"""
+
 
 class CodeBuilder:
     """Builds code strings from files using DataFrame analysis results"""
