@@ -28,6 +28,11 @@ class CodeAnalyzer:
         self.file_extensions: Dict[str, Language] = {
             lang.extension: lang for lang in Language
         }
+        self.current_tree: Optional[Tree] = None
+
+    def get_current_tree(self) -> Optional[Tree]:
+        """Get the most recently parsed syntax tree"""
+        return self.current_tree
 
     def _get_parser(self, language: str):
         """Get or create parser for a language"""
@@ -55,7 +60,8 @@ class CodeAnalyzer:
             source_code = f.read()
 
         parser = self._get_parser(language.value)
-        tree = parser.parse(source_code)
+        self.current_tree = parser.parse(source_code)
+        tree = self.current_tree
         objects: List[CodeObject] = []
 
         def visit_node(node: Node, parent_name: Optional[str] = None):
@@ -118,7 +124,9 @@ class CodeAnalyzer:
                 except Exception as e:
                     print(f"Error analyzing {file_path}: {e}")
 
-        return pd.DataFrame([vars(obj) for obj in code_objects])
+        df = pd.DataFrame([vars(obj) for obj in code_objects])
+        df['node_id'] = df.index
+        return df
 
 
 def analyze_codebase(
