@@ -111,11 +111,21 @@ class CodeAnalyzer:
         visit_node(tree.root_node)
         return objects
 
-    def analyze_directory(self, directory: Path) -> pd.DataFrame:
-        """Analyze all supported files in a directory"""
+    def analyze_directory(self, directory: str | Path) -> pd.DataFrame:
+        """
+        Analyze all supported files in a directory
+
+        Args:
+            directory: Path to the directory to analyze (string or Path object)
+
+        Returns:
+            DataFrame containing analyzed code objects with columns:
+            path, object_type, name, signature, start_line, end_line, parent, node_id
+        """
         code_objects: List[CodeObject] = []
 
-        for file_path in directory.rglob("*"):
+        dir_path = Path(directory) if isinstance(directory, str) else directory
+        for file_path in dir_path.rglob("*"):
             if file_path.suffix in self.file_extensions:
                 language = self.file_extensions[file_path.suffix]
                 try:
@@ -129,21 +139,16 @@ class CodeAnalyzer:
         return df
 
 
-def analyze_codebase(
-    directory: str,
-    languages: Set[Language],
-) -> pd.DataFrame:
+def analyze_codebase(directory: str) -> pd.DataFrame:
     """
-    Analyze a codebase for multiple languages and return a DataFrame
+    Analyze a codebase and return a DataFrame of code objects
 
     Args:
         directory: Path to the codebase directory
-        languages: Set of Language enum values to analyze
 
     Returns:
         DataFrame with columns: path, object_type, name, signature,
-        start_line, end_line, parent
+        start_line, end_line, parent, node_id
     """
     analyzer = CodeAnalyzer()
-
-    return analyzer.analyze_directory(Path(directory))
+    return analyzer.analyze_directory(directory)
