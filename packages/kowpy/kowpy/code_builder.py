@@ -254,6 +254,43 @@ class CodeBuilder:
 
         return "".join(result)
 
+    def process_snippets(self, text: str) -> list[int]:
+        """
+        Process a text containing code snippets and store modifications
+
+        The text should contain snippets in the format:
+        ### Snippet N
+        ```python
+        code block
+        ```
+        where N is the node_id corresponding to the DataFrame
+
+        Args:
+            text: Text containing formatted code snippets
+
+        Returns:
+            List of node_ids that were successfully processed
+        """
+        import re
+        
+        # Pattern to match snippet sections
+        pattern = r'### Snippet (\d+)\n```python\n(.*?)```'
+        
+        processed_ids = []
+        
+        # Find all matches in the text
+        for match in re.finditer(pattern, text, re.DOTALL):
+            node_id = int(match.group(1))
+            code = match.group(2).rstrip()  # Remove trailing whitespace
+            
+            try:
+                self.store_modified_block(node_id, code)
+                processed_ids.append(node_id)
+            except ValueError:
+                continue  # Skip if node_id doesn't exist or other validation fails
+                
+        return processed_ids
+
     def get_modifications_diff(
         self, file_path: Union[str, Path], context_lines: int = 3
     ) -> str:
