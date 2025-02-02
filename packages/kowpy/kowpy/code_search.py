@@ -159,20 +159,15 @@ class CodeSearchMatcher:
         # Consolidate matches based on granularity
         if self.granularity == Granularity.SCRIPT:
             # Group by path and aggregate
+            agg_dict = {
+                "path_match_score": "max",
+                "line_match": "max",
+                "start_line": "min",
+                "end_line": "max",
+            }
             consolidated = (
                 matches_df.groupby("path")
-                .agg(
-                    {
-                        "path_match_score": "max",
-                        "line_match": "max",
-                        "start_line": "min",
-                        "end_line": "max",
-                        "node_id": "first",  # Keep a reference node_id
-                        "name": "first",  # Keep first name
-                        "type": "first",  # Keep first type
-                        "parent": "first",  # Keep first parent
-                    }
-                )
+                .agg(agg_dict)
                 .reset_index()
             )
 

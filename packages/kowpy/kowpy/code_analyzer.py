@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 import pandas as pd
 from tree_sitter import Tree, Node, Parser
-from tree_sitter_languages import get_language, get_parser
+from tree_sitter_languages import get_parser
 from .languages import Language
 
 

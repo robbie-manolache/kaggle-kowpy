@@ -1,9 +1,7 @@
-from enum import Enum
 from pathlib import Path
-from typing import Optional, Union, Set, Dict, Any
+from typing import Optional, Union, Dict
 import pandas as pd
 from difflib import unified_diff
-from .languages import Language
 from .code_analyzer import analyze_codebase
 from .code_search import Granularity
 
@@ -49,10 +47,10 @@ class CodeBuilder:
             granularity: Granularity level. Defaults to Granularity.METHOD.
         """
         if directory is not None:
-            self.df = analyze_codebase(directory)
+            df = analyze_codebase(directory)
         else:
-            self.df = analysis_df
-        self._validate_df_schema()
+            df = analysis_df
+        self.set_dataframe(df)
 
     def _validate_df_schema(self) -> None:
         """Validate DataFrame has required columns"""
