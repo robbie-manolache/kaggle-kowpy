@@ -5,12 +5,8 @@ import pandas as pd
 from difflib import unified_diff
 from .languages import Language
 from .code_analyzer import analyze_codebase
+from .code_search import Granularity
 
-class Granularity(Enum):
-    """Controls the level at which code modifications are tracked"""
-    SCRIPT = "script"  # Entire file as one unit
-    PARENT = "parent"  # Class/top-level function level
-    METHOD = "method"  # Individual method level
 
 EXAMPLE = """
 Here is your solution
@@ -39,7 +35,6 @@ class CodeBuilder:
         self,
         analysis_df: Optional[pd.DataFrame] = None,
         directory: Optional[str] = None,
-        languages: Optional[Set[Language]] = None,
         granularity: Granularity = Granularity.METHOD,
     ):
         self.granularity = granularity
@@ -51,15 +46,10 @@ class CodeBuilder:
             analysis_df: DataFrame with columns: path, start_line, end_line
                         (Optional - can be provided later via set_dataframe)
             directory: Path to code directory to analyze (Optional)
-            languages: Set of Language enum values to analyze
-                        (Required if directory provided)
+            granularity: 
         """
         if directory is not None:
-            if languages is None:
-                raise ValueError(
-                    "languages must be provided when using directory"
-                )
-            self.df = analyze_codebase(directory, languages)
+            self.df = analyze_codebase(directory)
         else:
             self.df = analysis_df
         self._validate_df_schema()
@@ -214,11 +204,13 @@ class CodeBuilder:
         Store a modified code block based on current granularity level
 
         Args:
-            identifier: Either file path (str) for SCRIPT level or node_id (int) for others
+            identifier: Either file path (str) for SCRIPT level or
+                node_id (int) for others
             modified_code: Modified code string to store
 
         Raises:
-            ValueError: If validation fails or identifier type doesn't match granularity
+            ValueError: If validation fails or identifier type doesn't match
+                granularity
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
@@ -275,6 +267,9 @@ class CodeBuilder:
 
         if not use_modifications:
             return self.extract_code(file_path)
+        
+        if self.granularity == Granularity.SCRIPT:
+            return self.modified_blocks[str(path)]
 
         # Get all rows for this file
         file_rows = self.df[self.df["path"] == str(path)].sort_values(

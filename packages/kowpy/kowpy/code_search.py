@@ -1,6 +1,7 @@
 import json
 import re
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 import pandas as pd
@@ -15,6 +16,12 @@ EXAMPLE = """
 ]
 ```
 """
+
+class Granularity(Enum):
+    """Controls the level at which code modifications are tracked"""
+    SCRIPT = "script"  # Entire file as one unit
+    PARENT = "parent"  # Class/top-level function level
+    METHOD = "method"  # Individual method level
 
 
 @dataclass
