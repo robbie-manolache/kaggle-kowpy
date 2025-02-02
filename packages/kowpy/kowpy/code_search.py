@@ -119,22 +119,31 @@ class CodeSearchMatcher:
                 if score.score >= min_path_score:
                     # Check if object name matches
                     if row["name"] == search_object:
+                        # If this is a child object, find its parent
+                        if row["parent"] is not None:
+                            parent_row = df[df["name"] == row["parent"]].iloc[0]
+                            match_row = parent_row
+                        else:
+                            match_row = row
+
                         # Store the score for this path
-                        self.path_scores[row["path"]] = score
-                        matches.append(
-                            {
-                                **row,
+                        self.path_scores[match_row["path"]] = score
+                        
+                        # Only add if we haven't already added this parent
+                        if not any(m.get("node_id") == match_row["node_id"] 
+                                 for m in matches):
+                            matches.append({
+                                **match_row,
                                 "path_match_score": score.score,
                                 "line_match": (
-                                    row["start_line"]
+                                    match_row["start_line"]
                                     <= search_line
-                                    <= row["end_line"]
-                                    if "start_line" in row
-                                    and "end_line" in row
+                                    <= match_row["end_line"]
+                                    if "start_line" in match_row
+                                    and "end_line" in match_row
                                     else False
                                 ),
-                            }
-                        )
+                            })
 
         self.matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
 

@@ -167,17 +167,28 @@ class CodeBuilder:
 
     def store_modified_block(self, node_id: int, modified_code: str) -> None:
         """
-        Store a modified code block for a specific node_id
+        Store a modified code block for a specific node_id.
+        Only allows modifications at the class level.
 
         Args:
             node_id: The node_id of the object in the DataFrame
             modified_code: Modified code string to store
+
+        Raises:
+            ValueError: If trying to modify a child object or if validation fails
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        if node_id not in self.df["node_id"].values:
+        row = self.df[self.df["node_id"] == node_id]
+        if row.empty:
             raise ValueError(f"No object found with node_id {node_id}")
+
+        # Check if this is a child object
+        if not row.iloc[0]["parent"] is None:
+            raise ValueError(
+                "Cannot modify child objects. Please modify the parent class instead."
+            )
 
         original_code = self.extract_object(node_id)
         if not self._validate_indentation(original_code, modified_code):
