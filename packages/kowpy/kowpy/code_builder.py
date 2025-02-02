@@ -1,9 +1,16 @@
+from enum import Enum
 from pathlib import Path
-from typing import Optional, Union, Set
+from typing import Optional, Union, Set, Dict, Any
 import pandas as pd
 from difflib import unified_diff
 from .languages import Language
 from .code_analyzer import analyze_codebase
+
+class Granularity(Enum):
+    """Controls the level at which code modifications are tracked"""
+    SCRIPT = "script"  # Entire file as one unit
+    PARENT = "parent"  # Class/top-level function level
+    METHOD = "method"  # Individual method level
 
 EXAMPLE = """
 Here is your solution
@@ -33,8 +40,10 @@ class CodeBuilder:
         analysis_df: Optional[pd.DataFrame] = None,
         directory: Optional[str] = None,
         languages: Optional[Set[Language]] = None,
+        granularity: Granularity = Granularity.METHOD,
     ):
-        self.modified_blocks = {}  # Dictionary to store modified code blocks
+        self.granularity = granularity
+        self.modified_blocks: Dict[Union[str, int], str] = {}
         """
         Initialize CodeBuilder with either a DataFrame or directory analysis
 
@@ -74,6 +83,41 @@ class CodeBuilder:
         """
         self.df = df
         self._validate_df_schema()
+        self._filter_df_by_granularity()
+        
+    def _filter_df_by_granularity(self) -> None:
+        """Filter DataFrame based on current granularity setting"""
+        if self.df is None:
+            return
+            
+        if self.granularity == Granularity.SCRIPT:
+            # Group by file path and keep only the first and last lines
+            grouped = self.df.groupby("path").agg({
+                "start_line": "min",
+                "end_line": "max",
+                "node_id": "first"  # Keep first node_id for reference
+            }).reset_index()
+            self.df = grouped
+            
+        elif self.granularity == Granularity.PARENT:
+            # Keep only rows without parents (top-level functions and classes)
+            self.df = self.df[self.df["parent"].isna()].copy()
+            
+        # For METHOD granularity, keep all rows as is
+        
+        # Reset modified blocks when granularity changes
+        self.modified_blocks = {}
+        
+    def set_granularity(self, granularity: Granularity) -> None:
+        """
+        Change the granularity level and update DataFrame filtering
+        
+        Args:
+            granularity: New Granularity enum value to use
+        """
+        if self.granularity != granularity:
+            self.granularity = granularity
+            self._filter_df_by_granularity()
 
     def _validate_line_range(
         self, start_line: int, end_line: int, total_lines: int
@@ -165,38 +209,49 @@ class CodeBuilder:
         mod_indent = get_base_indent(modified_code)
         return orig_indent == mod_indent
 
-    def store_modified_block(self, node_id: int, modified_code: str) -> None:
+    def store_modified_block(self, identifier: Union[str, int], modified_code: str) -> None:
         """
-        Store a modified code block for a specific node_id.
-        Only allows modifications at the class level.
+        Store a modified code block based on current granularity level
 
         Args:
-            node_id: The node_id of the object in the DataFrame
+            identifier: Either file path (str) for SCRIPT level or node_id (int) for others
             modified_code: Modified code string to store
 
         Raises:
-            ValueError: If trying to modify a child object or if validation fails
+            ValueError: If validation fails or identifier type doesn't match granularity
         """
         if self.df is None:
             raise ValueError("No DataFrame has been provided")
 
-        row = self.df[self.df["node_id"] == node_id]
-        if row.empty:
-            raise ValueError(f"No object found with node_id {node_id}")
+        if self.granularity == Granularity.SCRIPT:
+            if not isinstance(identifier, str):
+                raise ValueError("File path (str) required for SCRIPT granularity")
+            path = Path(identifier)
+            if not path.exists():
+                raise ValueError(f"File not found: {identifier}")
+            self.modified_blocks[str(path)] = modified_code
+            
+        else:  # PARENT or METHOD granularity
+            if not isinstance(identifier, int):
+                raise ValueError("node_id (int) required for PARENT/METHOD granularity")
+                
+            row = self.df[self.df["node_id"] == identifier]
+            if row.empty:
+                raise ValueError(f"No object found with node_id {identifier}")
 
-        # Check if this is a child object
-        if not row.iloc[0]["parent"] is None:
-            raise ValueError(
-                "Cannot modify child objects. Please modify the parent class instead."
-            )
+            if self.granularity == Granularity.PARENT and not row.iloc[0]["parent"] is None:
+                raise ValueError(
+                    "Cannot modify child objects in PARENT granularity mode. "
+                    "Please modify the parent instead."
+                )
 
-        original_code = self.extract_object(node_id)
-        if not self._validate_indentation(original_code, modified_code):
-            raise ValueError(
-                "Modified code must maintain original indentation structure"
-            )
+            original_code = self.extract_object(identifier)
+            if not self._validate_indentation(original_code, modified_code):
+                raise ValueError(
+                    "Modified code must maintain original indentation structure"
+                )
 
-        self.modified_blocks[node_id] = modified_code
+            self.modified_blocks[identifier] = modified_code
 
     def compile_file_code(
         self, file_path: Union[str, Path], use_modifications: bool = False
