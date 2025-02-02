@@ -180,20 +180,19 @@ class CodeBuilder:
             row["path"], row["start_line"], row["end_line"]
         )
 
-    def _validate_indentation(
+    def _adjust_indentation(
         self, original_code: str, modified_code: str
-    ) -> bool:
+    ) -> str:
         """
-        Validate that modified code maintains proper indentation structure
+        Adjust the indentation of modified code to match original
 
         Args:
             original_code: Original code string
             modified_code: Modified code string
 
         Returns:
-            True if indentation is valid, False otherwise
+            Modified code with adjusted indentation
         """
-
         def get_base_indent(code: str) -> int:
             lines = code.splitlines()
             for line in lines:
@@ -203,7 +202,27 @@ class CodeBuilder:
 
         orig_indent = get_base_indent(original_code)
         mod_indent = get_base_indent(modified_code)
-        return orig_indent == mod_indent
+        
+        if orig_indent == mod_indent:
+            return modified_code
+            
+        # Split into lines and remove any trailing whitespace
+        lines = modified_code.rstrip().splitlines()
+        
+        # Calculate the indentation difference
+        indent_diff = orig_indent - mod_indent
+        
+        # Adjust each line's indentation
+        adjusted_lines = []
+        for line in lines:
+            if line.strip():  # Only adjust non-empty lines
+                current_indent = len(line) - len(line.lstrip())
+                new_indent = max(0, current_indent + indent_diff)
+                adjusted_lines.append(' ' * new_indent + line.lstrip())
+            else:
+                adjusted_lines.append(line)  # Keep empty lines as-is
+                
+        return '\n'.join(adjusted_lines) + '\n'
 
     def store_modified_block(
         self, identifier: Union[str, int], modified_code: str
@@ -253,12 +272,8 @@ class CodeBuilder:
                 )
 
             original_code = self.extract_object(identifier)
-            if not self._validate_indentation(original_code, modified_code):
-                raise ValueError(
-                    "Modified code must maintain original indentation"
-                )
-
-            self.modified_blocks[identifier] = modified_code
+            adjusted_code = self._adjust_indentation(original_code, modified_code)
+            self.modified_blocks[identifier] = adjusted_code
 
     def compile_file_code(
         self, file_path: Union[str, Path], use_modifications: bool = False
