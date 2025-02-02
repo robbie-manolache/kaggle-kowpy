@@ -17,8 +17,10 @@ EXAMPLE = """
 ```
 """
 
+
 class Granularity(Enum):
     """Controls the level at which code modifications are tracked"""
+
     SCRIPT = "script"  # Entire file as one unit
     PARENT = "parent"  # Class/top-level function level
     METHOD = "method"  # Individual method level
@@ -128,29 +130,35 @@ class CodeSearchMatcher:
                     if row["name"] == search_object:
                         # If this is a child object, find its parent
                         if row["parent"] is not None:
-                            parent_row = df[df["name"] == row["parent"]].iloc[0]
+                            parent_row = df[df["name"] == row["parent"]].iloc[
+                                0
+                            ]
                             match_row = parent_row
                         else:
                             match_row = row
 
                         # Store the score for this path
                         self.path_scores[match_row["path"]] = score
-                        
+
                         # Only add if we haven't already added this parent
-                        if not any(m.get("node_id") == match_row["node_id"] 
-                                 for m in matches):
-                            matches.append({
-                                **match_row,
-                                "path_match_score": score.score,
-                                "line_match": (
-                                    match_row["start_line"]
-                                    <= search_line
-                                    <= match_row["end_line"]
-                                    if "start_line" in match_row
-                                    and "end_line" in match_row
-                                    else False
-                                ),
-                            })
+                        if not any(
+                            m.get("node_id") == match_row["node_id"]
+                            for m in matches
+                        ):
+                            matches.append(
+                                {
+                                    **match_row,
+                                    "path_match_score": score.score,
+                                    "line_match": (
+                                        match_row["start_line"]
+                                        <= search_line
+                                        <= match_row["end_line"]
+                                        if "start_line" in match_row
+                                        and "end_line" in match_row
+                                        else False
+                                    ),
+                                }
+                            )
 
         self.matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
 

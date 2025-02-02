@@ -46,7 +46,7 @@ class CodeBuilder:
             analysis_df: DataFrame with columns: path, start_line, end_line
                         (Optional - can be provided later via set_dataframe)
             directory: Path to code directory to analyze (Optional)
-            granularity: 
+            granularity: Granularity level. Defaults to Granularity.METHOD.
         """
         if directory is not None:
             self.df = analyze_codebase(directory)
@@ -74,34 +74,40 @@ class CodeBuilder:
         self.df = df
         self._validate_df_schema()
         self._filter_df_by_granularity()
-        
+
     def _filter_df_by_granularity(self) -> None:
         """Filter DataFrame based on current granularity setting"""
         if self.df is None:
             return
-            
+
         if self.granularity == Granularity.SCRIPT:
             # Group by file path and keep only the first and last lines
-            grouped = self.df.groupby("path").agg({
-                "start_line": "min",
-                "end_line": "max",
-                "node_id": "first"  # Keep first node_id for reference
-            }).reset_index()
+            grouped = (
+                self.df.groupby("path")
+                .agg(
+                    {
+                        "start_line": "min",
+                        "end_line": "max",
+                        "node_id": "first",  # Keep first node_id for reference
+                    }
+                )
+                .reset_index()
+            )
             self.df = grouped
-            
+
         elif self.granularity == Granularity.PARENT:
             # Keep only rows without parents (top-level functions and classes)
             self.df = self.df[self.df["parent"].isna()].copy()
-            
+
         # For METHOD granularity, keep all rows as is
-        
+
         # Reset modified blocks when granularity changes
         self.modified_blocks = {}
-        
+
     def set_granularity(self, granularity: Granularity) -> None:
         """
         Change the granularity level and update DataFrame filtering
-        
+
         Args:
             granularity: New Granularity enum value to use
         """
@@ -199,7 +205,9 @@ class CodeBuilder:
         mod_indent = get_base_indent(modified_code)
         return orig_indent == mod_indent
 
-    def store_modified_block(self, identifier: Union[str, int], modified_code: str) -> None:
+    def store_modified_block(
+        self, identifier: Union[str, int], modified_code: str
+    ) -> None:
         """
         Store a modified code block based on current granularity level
 
@@ -217,21 +225,28 @@ class CodeBuilder:
 
         if self.granularity == Granularity.SCRIPT:
             if not isinstance(identifier, str):
-                raise ValueError("File path (str) required for SCRIPT granularity")
+                raise ValueError(
+                    "File path (str) required for SCRIPT granularity"
+                )
             path = Path(identifier)
             if not path.exists():
                 raise ValueError(f"File not found: {identifier}")
             self.modified_blocks[str(path)] = modified_code
-            
+
         else:  # PARENT or METHOD granularity
             if not isinstance(identifier, int):
-                raise ValueError("node_id (int) required for PARENT/METHOD granularity")
-                
+                raise ValueError(
+                    "node_id (int) required for PARENT/METHOD granularity"
+                )
+
             row = self.df[self.df["node_id"] == identifier]
             if row.empty:
                 raise ValueError(f"No object found with node_id {identifier}")
 
-            if self.granularity == Granularity.PARENT and not row.iloc[0]["parent"] is None:
+            if (
+                self.granularity == Granularity.PARENT
+                and row.iloc[0]["parent"] is not None
+            ):
                 raise ValueError(
                     "Cannot modify child objects in PARENT granularity mode. "
                     "Please modify the parent instead."
@@ -240,7 +255,7 @@ class CodeBuilder:
             original_code = self.extract_object(identifier)
             if not self._validate_indentation(original_code, modified_code):
                 raise ValueError(
-                    "Modified code must maintain original indentation structure"
+                    "Modified code must maintain original indentation"
                 )
 
             self.modified_blocks[identifier] = modified_code
@@ -267,7 +282,7 @@ class CodeBuilder:
 
         if not use_modifications:
             return self.extract_code(file_path)
-        
+
         if self.granularity == Granularity.SCRIPT:
             return self.modified_blocks[str(path)]
 
@@ -333,23 +348,23 @@ class CodeBuilder:
             List of node_ids that were successfully processed
         """
         import re
-        
+
         # Pattern to match snippet sections
-        pattern = r'### Snippet (\d+)\n```python\n(.*?)```'
-        
+        pattern = r"### Snippet (\d+)\n```python\n(.*?)```"
+
         processed_ids = []
-        
+
         # Find all matches in the text
         for match in re.finditer(pattern, text, re.DOTALL):
             node_id = int(match.group(1))
             code = match.group(2).rstrip()  # Remove trailing whitespace
-            
+
             try:
                 self.store_modified_block(node_id, code)
                 processed_ids.append(node_id)
             except ValueError:
-                continue  # Skip if node_id doesn't exist or other validation fails
-                
+                continue  # Skip if node_id doesn't exist or validation fails
+
         return processed_ids
 
     def get_modifications_diff(
