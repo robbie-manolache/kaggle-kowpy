@@ -47,7 +47,9 @@ class MatchScore:
 class CodeSearchMatcher:
     """Matches code objects from JSON search criteria against analyzed code"""
 
-    def __init__(self, json_text: str, granularity: Granularity = Granularity.METHOD):
+    def __init__(
+        self, json_text: str, granularity: Granularity = Granularity.METHOD
+    ):
         """
         Initialize with JSON text containing files and objects to search for
 
@@ -149,55 +151,71 @@ class CodeSearchMatcher:
 
         # Create initial matches DataFrame at method level
         matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
-        
+
         if matches_df.empty:
             self.matches_df = matches_df
             return matches_df
-            
+
         # Consolidate matches based on granularity
         if self.granularity == Granularity.SCRIPT:
             # Group by path and aggregate
-            consolidated = matches_df.groupby("path").agg({
-                "path_match_score": "max",
-                "line_match": "max",
-                "start_line": "min",
-                "end_line": "max",
-                "node_id": "first",  # Keep a reference node_id
-                "name": "first",     # Keep first name
-                "type": "first",     # Keep first type
-                "parent": "first"    # Keep first parent
-            }).reset_index()
-            
+            consolidated = (
+                matches_df.groupby("path")
+                .agg(
+                    {
+                        "path_match_score": "max",
+                        "line_match": "max",
+                        "start_line": "min",
+                        "end_line": "max",
+                        "node_id": "first",  # Keep a reference node_id
+                        "name": "first",  # Keep first name
+                        "type": "first",  # Keep first type
+                        "parent": "first",  # Keep first parent
+                    }
+                )
+                .reset_index()
+            )
+
         elif self.granularity == Granularity.PARENT:
             # First get all parent rows
             parent_matches = matches_df[matches_df["parent"].isna()]
-            
+
             # Then get child rows and aggregate them to their parents
             child_matches = matches_df[matches_df["parent"].notna()]
             if not child_matches.empty:
-                child_agg = child_matches.groupby("parent").agg({
-                    "path": "first",
-                    "path_match_score": "max",
-                    "line_match": "max"
-                })
-                
+                child_agg = child_matches.groupby("parent").agg(
+                    {
+                        "path": "first",
+                        "path_match_score": "max",
+                        "line_match": "max",
+                    }
+                )
+
                 # Update parent scores where children had better matches
                 for parent_name, agg_row in child_agg.iterrows():
-                    parent_idx = parent_matches[parent_matches["name"] == parent_name].index
+                    parent_idx = parent_matches[
+                        parent_matches["name"] == parent_name
+                    ].index
                     if not parent_idx.empty:
-                        parent_matches.loc[parent_idx, "path_match_score"] = max(
-                            parent_matches.loc[parent_idx, "path_match_score"].iloc[0],
-                            agg_row["path_match_score"]
+                        parent_matches.loc[parent_idx, "path_match_score"] = (
+                            max(
+                                parent_matches.loc[
+                                    parent_idx, "path_match_score"
+                                ].iloc[0],
+                                agg_row["path_match_score"],
+                            )
                         )
                         parent_matches.loc[parent_idx, "line_match"] = max(
-                            parent_matches.loc[parent_idx, "line_match"].iloc[0],
-                            agg_row["line_match"]
+                            parent_matches.loc[parent_idx, "line_match"].iloc[
+                                0
+                            ],
+                            agg_row["line_match"],
                         )
-            
+
             consolidated = parent_matches
-            
+
         else:  # METHOD granularity
             consolidated = matches_df
-            
+
         self.matches_df = consolidated
         return consolidated
