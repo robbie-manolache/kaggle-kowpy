@@ -115,7 +115,7 @@ class CodeSearchMatcher:
         for target in self.search_targets:
             search_path = target["file"]
             search_object = target["object"]
-            search_line = target["line"]
+            search_line = target["line"] or -1
 
             # Find matching rows for this target
             for _, row in df.iterrows():
@@ -130,37 +130,22 @@ class CodeSearchMatcher:
                 if score.score >= min_path_score:
                     # Check if object name matches
                     if row["name"] == search_object:
-                        # If this is a child object, find its parent
-                        if row["parent"] is not None:
-                            parent_row = df[df["name"] == row["parent"]].iloc[
-                                0
-                            ]
-                            match_row = parent_row
-                        else:
-                            match_row = row
-
                         # Store the score for this path
-                        self.path_scores[match_row["path"]] = score
-
-                        # Only add if we haven't already added this parent
-                        if not any(
-                            m.get("node_id") == match_row["node_id"]
-                            for m in matches
-                        ):
-                            matches.append(
-                                {
-                                    **match_row,
-                                    "path_match_score": score.score,
-                                    "line_match": (
-                                        match_row["start_line"]
-                                        <= search_line
-                                        <= match_row["end_line"]
-                                        if "start_line" in match_row
-                                        and "end_line" in match_row
-                                        else False
-                                    ),
-                                }
-                            )
+                        self.path_scores[row["path"]] = score
+                        matches.append(
+                            {
+                                **row,
+                                "path_match_score": score.score,
+                                "line_match": (
+                                    row["start_line"]
+                                    <= search_line
+                                    <= row["end_line"]
+                                    if "start_line" in row
+                                    and "end_line" in row
+                                    else False
+                                ),
+                            }
+                        )
 
         # Create initial matches DataFrame at method level
         matches_df = pd.DataFrame(matches) if matches else pd.DataFrame()
