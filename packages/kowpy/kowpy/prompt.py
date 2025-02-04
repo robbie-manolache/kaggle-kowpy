@@ -16,10 +16,34 @@ class PromptGenerator:
             return prompt
         return prompt(**kwargs)
     
-    def generate_messages(self, **kwargs) -> List[Dict[str, str]]:
-        """Generate messages list for LLM input."""
-        system_text = self.execute_prompt(self.system_prompt, **kwargs)
-        user_text = self.execute_prompt(self.user_prompt, **kwargs)
+    def get_system_prompt(self, **kwargs) -> str:
+        """Execute the system prompt with given kwargs."""
+        return self.execute_prompt(self.system_prompt, **kwargs)
+    
+    def get_user_prompt(self, **kwargs) -> str:
+        """Execute the user prompt with given kwargs."""
+        return self.execute_prompt(self.user_prompt, **kwargs)
+    
+    def generate_messages(
+        self, 
+        system_kwargs: dict = None, 
+        user_kwargs: dict = None
+    ) -> List[Dict[str, str]]:
+        """
+        Generate messages list for LLM input with separate kwargs for each prompt.
+        
+        Args:
+            system_kwargs: Keywords arguments for system prompt
+            user_kwargs: Keyword arguments for user prompt
+        
+        Returns:
+            List of message dictionaries with role and content
+        """
+        system_kwargs = system_kwargs or {}
+        user_kwargs = user_kwargs or {}
+        
+        system_text = self.get_system_prompt(**system_kwargs)
+        user_text = self.get_user_prompt(**user_kwargs)
         
         return [
             {"role": "system", "content": system_text},
