@@ -1,5 +1,30 @@
+from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from typing import List, Dict
+from typing import List, Dict, Union, Callable
+
+
+@dataclass
+class PromptGenerator:
+    """A class to generate system and user prompts for LLM input."""
+    
+    system_prompt: Union[str, Callable[..., str]]
+    user_prompt: Union[str, Callable[..., str]]
+    
+    def execute_prompt(self, prompt: Union[str, Callable[..., str]], **kwargs) -> str:
+        """Execute a prompt if it's a Callable, or return it if it's a string."""
+        if isinstance(prompt, str):
+            return prompt
+        return prompt(**kwargs)
+    
+    def generate_messages(self, **kwargs) -> List[Dict[str, str]]:
+        """Generate messages list for LLM input."""
+        system_text = self.execute_prompt(self.system_prompt, **kwargs)
+        user_text = self.execute_prompt(self.user_prompt, **kwargs)
+        
+        return [
+            {"role": "system", "content": system_text},
+            {"role": "user", "content": user_text}
+        ]
 
 
 class TextGenerator:
