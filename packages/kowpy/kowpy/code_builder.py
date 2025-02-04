@@ -412,3 +412,27 @@ class CodeBuilder:
         )
 
         return "".join(diff)
+        
+    def populate_snippets(self, snippets: list[CodeSnippet]) -> None:
+        """
+        Populate the code field of CodeSnippet objects with their original source code.
+        
+        For SCRIPT granularity, extracts entire file contents.
+        For METHOD/PARENT granularity, extracts specific object code.
+        
+        Args:
+            snippets: List of CodeSnippet objects to populate
+        """
+        if self.df is None:
+            raise ValueError("No DataFrame has been provided")
+            
+        for snippet in snippets:
+            try:
+                if self.granularity == Granularity.SCRIPT:
+                    snippet.code = self.extract_code(snippet.file_path)
+                else:
+                    # For METHOD/PARENT granularity use node_id
+                    snippet.code = self.extract_object(snippet.node_id)
+            except (ValueError, FileNotFoundError):
+                # Skip snippets that can't be found or extracted
+                continue
