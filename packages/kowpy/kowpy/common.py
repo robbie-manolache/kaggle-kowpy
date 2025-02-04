@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class CodeSnippet:
     """Class for code snippets and their metadata for LLM prompts"""

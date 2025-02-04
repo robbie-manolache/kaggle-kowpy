@@ -108,7 +108,7 @@ Only fix the snippets shown below in a way that fixes the problem:
 """
 
     for snip in snippets:
-        body = f"\n### Snippet {snip.node_id} | Path: {snip.file_path}"
+        body = f"\n### Snippet {snip.node_id}"
         obj, parent = snip.object_name, snip.parent_name
         if parent:
             desc = f"method `{obj}` from `{parent}` class"
@@ -123,7 +123,7 @@ Revise only the labeled snippets and return the updated code.
 Follow the following format for each response (example only):
 
 ### Snippet 15 | Path: /path/to/file.py
-```py
+```python
 def hello_world():
     print("Hello World!")
 ```
