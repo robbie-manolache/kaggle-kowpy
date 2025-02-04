@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List, Dict, Union, Callable
+from .common import CodeSnippet
 
 
 @dataclass
@@ -50,17 +51,6 @@ class PromptGenerator:
             {"role": "system", "content": system_text},
             {"role": "user", "content": user_text},
         ]
-
-
-@dataclass
-class CodeSnippet:
-    """Class for code snippets and their metadata for LLM prompts"""
-
-    file_path: str
-    node_id: int
-    object_name: str
-    parent_name: str | None
-    code: str
 
 
 def search_user_prompt(repo_name: str, problem: str) -> str:
