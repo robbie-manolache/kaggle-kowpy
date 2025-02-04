@@ -6,48 +6,49 @@ from typing import List, Dict, Union, Callable
 @dataclass
 class PromptGenerator:
     """A class to generate system and user prompts for LLM input."""
-    
+
     system_prompt: Union[str, Callable[..., str]]
     user_prompt: Union[str, Callable[..., str]]
-    
-    def execute_prompt(self, prompt: Union[str, Callable[..., str]], **kwargs) -> str:
-        """Execute a prompt if it's a Callable, or return it if it's a string."""
+
+    def execute_prompt(
+        self, prompt: Union[str, Callable[..., str]], **kwargs
+    ) -> str:
+        """Execute prompt if it's a Callable, or return if it's a string."""
         if isinstance(prompt, str):
             return prompt
         return prompt(**kwargs)
-    
+
     def get_system_prompt(self, **kwargs) -> str:
         """Execute the system prompt with given kwargs."""
         return self.execute_prompt(self.system_prompt, **kwargs)
-    
+
     def get_user_prompt(self, **kwargs) -> str:
         """Execute the user prompt with given kwargs."""
         return self.execute_prompt(self.user_prompt, **kwargs)
-    
+
     def generate_messages(
-        self, 
-        system_kwargs: dict = None, 
-        user_kwargs: dict = None
+        self, system_kwargs: dict = None, user_kwargs: dict = None
     ) -> List[Dict[str, str]]:
         """
-        Generate messages list for LLM input with separate kwargs for each prompt.
-        
+        Generate messages list for LLM input with separate kwargs for each
+        prompt type.
+
         Args:
             system_kwargs: Keywords arguments for system prompt
             user_kwargs: Keyword arguments for user prompt
-        
+
         Returns:
             List of message dictionaries with role and content
         """
         system_kwargs = system_kwargs or {}
         user_kwargs = user_kwargs or {}
-        
+
         system_text = self.get_system_prompt(**system_kwargs)
         user_text = self.get_user_prompt(**user_kwargs)
-        
+
         return [
             {"role": "system", "content": system_text},
-            {"role": "user", "content": user_text}
+            {"role": "user", "content": user_text},
         ]
 
 

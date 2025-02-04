@@ -166,9 +166,7 @@ class CodeSearchMatcher:
                 "end_line": "max",
             }
             consolidated = (
-                matches_df.groupby("path")
-                .agg(agg_dict)
-                .reset_index()
+                matches_df.groupby("path").agg(agg_dict).reset_index()
             )
 
         elif self.granularity == Granularity.PARENT:
