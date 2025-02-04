@@ -1,6 +1,5 @@
-import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 
 class TextGenerator:
