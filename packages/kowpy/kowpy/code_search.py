@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 import pandas as pd
 from .code_analyzer import CodeObject
+from .common import CodeSnippet
 
 EXAMPLE = """
 ```json
@@ -243,3 +244,26 @@ class CodeSearchMatcher:
             sorted_df.groupby("target_id").first().reset_index()
         )
         return self.ranked_matches_df
+        
+    def get_ranked_snippets(self) -> List[CodeSnippet]:
+        """
+        Convert ranked matches DataFrame to list of CodeSnippet objects.
+        
+        Returns:
+            List of CodeSnippet objects for each ranked match
+        """
+        if self.ranked_matches_df is None or self.ranked_matches_df.empty:
+            return []
+            
+        snippets = []
+        for _, row in self.ranked_matches_df.iterrows():
+            snippet = CodeSnippet(
+                file_path=row['path'],
+                node_id=row['node_id'],
+                object_name=row['name'],
+                parent_name=row.get('parent'),  # Using get() since parent may be None
+                code=None
+            )
+            snippets.append(snippet)
+            
+        return snippets
