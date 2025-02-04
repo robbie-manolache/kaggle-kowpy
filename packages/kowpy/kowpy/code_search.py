@@ -63,10 +63,14 @@ class CodeSearchMatcher:
             json_text = json_match.group(1)
 
         search_data = json.loads(json_text)
-        self.search_targets = (
-            search_data if isinstance(search_data, list) else []
-        )
+        # Add target_id to each search target
+        self.search_targets = []
+        for i, target in enumerate(search_data if isinstance(search_data, list) else []):
+            target['target_id'] = i
+            self.search_targets.append(target)
+            
         self.matches_df: Optional[pd.DataFrame] = None
+        self.ranked_matches_df: Optional[pd.DataFrame] = None
         self.path_scores: Dict[str, MatchScore] = {}
         self.granularity = granularity
 
@@ -119,6 +123,7 @@ class CodeSearchMatcher:
             search_object = target["object"]
             search_line = target["line"] or -1
 
+            target_id = target["target_id"]
             # Find matching rows for this target
             for _, row in df.iterrows():
                 path = str(Path(row["path"]))
@@ -137,6 +142,7 @@ class CodeSearchMatcher:
                         matches.append(
                             {
                                 **row,
+                                "target_id": target_id,
                                 "path_match_score": score.score,
                                 "line_match": (
                                     row["start_line"]
@@ -212,3 +218,24 @@ class CodeSearchMatcher:
 
         self.matches_df = consolidated
         return consolidated
+
+    def rank_matches(self) -> pd.DataFrame:
+        """
+        Rank matches by path_match_score and line_match to find best match per target.
+        
+        Returns:
+            DataFrame containing only the best match for each search target
+        """
+        if self.matches_df is None or self.matches_df.empty:
+            self.ranked_matches_df = pd.DataFrame()
+            return self.ranked_matches_df
+            
+        # Sort by target_id, path_match_score (primary), and line_match (secondary)
+        sorted_df = self.matches_df.sort_values(
+            by=['target_id', 'path_match_score', 'line_match'],
+            ascending=[True, False, False]
+        )
+        
+        # Keep only the best match for each target_id
+        self.ranked_matches_df = sorted_df.groupby('target_id').first().reset_index()
+        return self.ranked_matches_df
