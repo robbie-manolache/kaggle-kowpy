@@ -52,6 +52,109 @@ class PromptGenerator:
         ]
 
 
+@dataclass
+class CodeSnippet:
+    """Class for code snippets and their metadata for LLM prompts"""
+
+    file_path: str
+    node_id: int
+    object_name: str
+    parent_name: str | None
+    code: str
+
+
+def search_user_prompt(repo_name: str, problem: str) -> str:
+    """Generate prompt to search for objects/files in a repo"""
+
+    return (
+        f"""
+You are working in the `{repo_name}` repo on the following problem:
+
+{problem}
+
+Which files and objects require modification to resolve the issue?
+"""
+        + """
+Your response must be in the following format:
+
+```json
+{
+    "files": ["path/to/file1.py", "path/to/file2.py"],
+    "objects": ["my_function_1", "my_fuction_2"],
+}
+```
+"""
+        + f"""
+Do not attempt to solve the issue.
+Make sure to consider all relevant file paths and objects, \
+especially those shown in error messages and related to `{repo_name}`.
+"""
+    )
+
+
+SEARCH_PROMPT = PromptGenerator(
+    system_prompt="""
+You are a software engineering assistant resolving issues in a Python code \
+repository. You are responsible only for identifying the relevant files and \
+objects that will be required by someone else to solve the issue.
+""",
+    user_prompt=search_user_prompt,
+)
+
+
+def fixer_user_prompt(
+    repo_name: str,
+    problem: str,
+    snippets: List[CodeSnippet],
+) -> str:
+
+    fix_prompt = f"""
+You are working in the `{repo_name}` repo on the following problem:
+
+{problem}
+
+Do not fix any of the code shown above.
+Only fix the snippets shown below in a way that fixes the problem:
+"""
+
+    for snip in snippets:
+        body = f"\n### Snippet {snip.node_id} | Path: {snip.file_path}"
+        obj, parent = snip.object_name, snip.parent_name
+        if parent:
+            desc = f"method `{obj}` from `{parent}` class"
+        else:
+            desc = f"function `{obj}`"
+        body += f"\nContains the code for {desc}:"
+        body += "\n```py\n\n" + snip.code + "\n```\n\n"
+        fix_prompt += body
+
+    fix_prompt += """
+Revise only the labeled snippets and return the updated code.
+Follow the following format for each response (example only):
+
+### Snippet 15 | Path: /path/to/file.py
+```py
+def hello_world():
+    print("Hello World!")
+```
+
+Maintain the original indentation from the snippets.
+Make sure to label each response snippet correctly.
+"""
+
+    return fix_prompt
+
+
+FIXER_PROMPT = PromptGenerator(
+    system_prompt="""
+You are a software engineering assistant resolving issues in a Python code \
+repository. You are responsible for patching code that addresses problems \
+reported by users.
+""",
+    user_prompt=fixer_user_prompt,
+)
+
+
 class TextGenerator:
     """A class to handle text generation using transformer models."""
 
