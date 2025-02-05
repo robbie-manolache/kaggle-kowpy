@@ -440,8 +440,8 @@ class CodeBuilder:
         diff = unified_diff(
             original.splitlines(keepends=True),
             modified.splitlines(keepends=True),
-            fromfile=f"a{display_path}",
-            tofile=f"b{display_path}",
+            fromfile=f"a/{display_path}",
+            tofile=f"b/{display_path}",
             n=context_lines,
         )
 

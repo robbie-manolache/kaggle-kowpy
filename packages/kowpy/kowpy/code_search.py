@@ -185,18 +185,12 @@ class CodeSearchMatcher:
             # Get child matches and aggregate to parent level
             child_matches = matches_df[matches_df["parent"].notna()]
             if not child_matches.empty:
-                # Aggregate child matches by parent
-                child_agg = (
-                    child_matches.groupby("parent")
-                    .agg(
-                        {
-                            "path_match_score": "max",
-                            "line_match": "max",
-                            "path": "first",  # Keep a reference path
-                        }
-                    )
-                    .reset_index()
-                )
+                # Dedupe best child matches by parent
+                key_cols = ["parent", "path"]
+                sort_cols = ["path_match_score", "line_match"]
+                child_cols = [*key_cols, "target_id", *sort_cols]
+                child_agg = child_matches[child_cols].sort_values(sort_cols)
+                child_agg = child_agg.drop_duplicates(subset=key_cols)
 
                 # Rename column to match original df
                 child_agg = child_agg.rename(columns={"parent": "name"})
@@ -204,8 +198,7 @@ class CodeSearchMatcher:
                 # Get parent info from original df for child matches
                 parent_info = df[df["parent"].isna()].copy()
                 child_parents = child_agg.merge(
-                    parent_info,
-                    on=["name", "path"],
+                    parent_info, on=["name", "path"]
                 )
 
                 # Combine direct parent matches with children's parent matches
