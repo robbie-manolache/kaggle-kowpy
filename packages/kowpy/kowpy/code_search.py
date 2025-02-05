@@ -179,42 +179,46 @@ class CodeSearchMatcher:
             )
 
         elif self.granularity == Granularity.PARENT:
-            # First get all parent rows
+            # Get direct parent matches
             parent_matches = matches_df[matches_df["parent"].isna()]
-
-            # Then get child rows and aggregate them to their parents
+            
+            # Get child matches and aggregate to parent level
             child_matches = matches_df[matches_df["parent"].notna()]
             if not child_matches.empty:
-                child_agg = child_matches.groupby("parent").agg(
-                    {
-                        "path": "first",
-                        "path_match_score": "max",
-                        "line_match": "max",
-                    }
+                # Aggregate child matches by parent
+                child_agg = child_matches.groupby("parent").agg({
+                    "path_match_score": "max",
+                    "line_match": "max",
+                    "path": "first",  # Keep a reference path
+                }).reset_index()
+                
+                # Rename column to match original df
+                child_agg = child_agg.rename(columns={"parent": "name"})
+                
+                # Get parent info from original df for child matches
+                parent_info = df[df["parent"].isna()].copy()
+                child_parents = child_agg.merge(
+                    parent_info,
+                    on="name",
+                    suffixes=("_child", ""),
                 )
-
-                # Update parent scores where children had better matches
-                for parent_name, agg_row in child_agg.iterrows():
-                    parent_idx = parent_matches[
-                        parent_matches["name"] == parent_name
-                    ].index
-                    if not parent_idx.empty:
-                        parent_matches.loc[parent_idx, "path_match_score"] = (
-                            max(
-                                parent_matches.loc[
-                                    parent_idx, "path_match_score"
-                                ].iloc[0],
-                                agg_row["path_match_score"],
-                            )
-                        )
-                        parent_matches.loc[parent_idx, "line_match"] = max(
-                            parent_matches.loc[parent_idx, "line_match"].iloc[
-                                0
-                            ],
-                            agg_row["line_match"],
-                        )
-
-            consolidated = parent_matches
+                
+                # Use aggregated scores from children
+                child_parents["path_match_score"] = child_parents["path_match_score_child"]
+                child_parents["line_match"] = child_parents["line_match_child"]
+                
+                # Combine direct parent matches with parent matches derived from children
+                if not parent_matches.empty:
+                    consolidated = pd.concat([parent_matches, child_parents])
+                    # If same parent exists in both, keep the one with higher score
+                    consolidated = consolidated.sort_values(
+                        ["name", "path_match_score", "line_match"],
+                        ascending=[True, False, False]
+                    ).drop_duplicates(subset=["name"], keep="first")
+                else:
+                    consolidated = child_parents
+            else:
+                consolidated = parent_matches
 
         else:  # METHOD granularity
             consolidated = matches_df
