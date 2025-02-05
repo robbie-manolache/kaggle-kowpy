@@ -405,7 +405,10 @@ class CodeBuilder:
         return processed_ids
 
     def get_modifications_diff(
-        self, file_path: Union[str, Path], context_lines: int = 3
+        self,
+        file_path: Union[str, Path],
+        context_lines: int = 3,
+        root_dir: Optional[str] = None,
     ) -> str:
         """
         Generate unified diff between original and modified versions of a file
@@ -413,6 +416,7 @@ class CodeBuilder:
         Args:
             file_path: Path to the source file
             context_lines: Number of context lines in diff output (default=3)
+            root_dir: Optional root directory to strip from paths in diff output
 
         Returns:
             String containing the unified diff
@@ -424,11 +428,20 @@ class CodeBuilder:
         original = self.compile_file_code(path, use_modifications=False)
         modified = self.compile_file_code(path, use_modifications=True)
 
+        # Handle path prefix removal if root_dir is provided
+        display_path = path
+        if root_dir is not None:
+            try:
+                display_path = path.relative_to(root_dir)
+            except ValueError:
+                # If path is not relative to root_dir, use full path
+                pass
+
         diff = unified_diff(
             original.splitlines(keepends=True),
             modified.splitlines(keepends=True),
-            fromfile=f"a/{path}",
-            tofile=f"b/{path}",
+            fromfile=f"a/{display_path}",
+            tofile=f"b/{display_path}",
             n=context_lines,
         )
 
