@@ -53,12 +53,12 @@ class PromptGenerator:
         ]
 
 
-def search_user_prompt(repo_name: str, problem: str) -> str:
+def search_user_prompt(problem: str) -> str:
     """Generate prompt to search for objects/files in a repo"""
 
     return (
         f"""
-You are working in the `{repo_name}` repo on the following problem:
+You are working in a code repo on the following problem:
 
 {problem}
 
@@ -77,7 +77,7 @@ Your response must be in the following format:
         + f"""
 Do not attempt to solve the issue.
 Make sure to consider all relevant file paths and objects, \
-especially those shown in error messages and related to `{repo_name}`.
+especially those shown in error messages related to the repo.
 """
     )
 
@@ -93,13 +93,12 @@ objects that will be required by someone else to solve the issue.
 
 
 def fixer_user_prompt(
-    repo_name: str,
     problem: str,
     snippets: List[CodeSnippet],
 ) -> str:
 
     fix_prompt = f"""
-You are working in the `{repo_name}` repo on the following problem:
+You are working in a code repo on the following problem:
 
 {problem}
 

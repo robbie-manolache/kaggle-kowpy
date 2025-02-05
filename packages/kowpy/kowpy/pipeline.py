@@ -12,9 +12,8 @@ from .prompt import (
 
 
 def run_pipeline(
-    df: pd.DataFrame,
-    root_dir: Path,
-    issue_index: int,
+    repo_path: str,
+    problem: str,
     model_name: str,
 ) -> str | None:
     """
@@ -38,14 +37,8 @@ def run_pipeline(
         String containing unified diff of proposed changes, or None if it fails
     """
 
-    # Extract repository and issue information
-    repo_id = df["instance_id"].iloc[issue_index]
-    repo_name = df["repo"].iloc[issue_index]
-    repo_path = root_dir / f"data/repos/repo__{repo_id}"
-    problem = df["problem_statement"].iloc[issue_index]
-
     # Prepare common kwargs for prompts
-    base_kwargs = {"repo_name": repo_name, "problem": problem}
+    base_kwargs = {"problem": problem}
 
     # Initialize text generator with model
     # Generate search criteria using LLM
