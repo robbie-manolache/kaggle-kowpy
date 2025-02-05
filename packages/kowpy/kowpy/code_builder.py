@@ -416,7 +416,7 @@ class CodeBuilder:
         Args:
             file_path: Path to the source file
             context_lines: Number of context lines in diff output (default=3)
-            root_dir: Optional root directory to strip from paths in diff output
+            root_dir: Optional root dir to strip from paths in diff output
 
         Returns:
             String containing the unified diff
@@ -440,8 +440,8 @@ class CodeBuilder:
         diff = unified_diff(
             original.splitlines(keepends=True),
             modified.splitlines(keepends=True),
-            fromfile=f"a/{display_path}",
-            tofile=f"b/{display_path}",
+            fromfile=f"a{display_path}",
+            tofile=f"b{display_path}",
             n=context_lines,
         )
 
