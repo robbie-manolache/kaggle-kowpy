@@ -1,8 +1,5 @@
-"""Pipeline module for automated code analysis and modification"""
-
 from pathlib import Path
 import pandas as pd
-from typing import Optional
 
 from .code_analyzer import analyze_codebase
 from .code_builder import CodeBuilder
@@ -12,8 +9,6 @@ from .prompt import (
     SEARCH_PROMPT,
     TextGenerator,
 )
-
-__all__ = ["run_pipeline"]
 
 
 def run_pipeline(
@@ -40,7 +35,7 @@ def run_pipeline(
         model_name: Name of the LLM model to use
 
     Returns:
-        String containing unified diff of proposed changes, or None if processing fails
+        String containing unified diff of proposed changes, or None if it fails
     """
 
     # Extract repository and issue information
