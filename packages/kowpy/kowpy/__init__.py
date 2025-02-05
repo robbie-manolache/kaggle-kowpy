@@ -1,3 +1,7 @@
+"""KowPy - A Python package for code analysis and manipulation"""
+
+__version__ = "0.1.0"
+
 from kowpy.repo_map import (
     map_directory,
     map_directory_json,
@@ -16,3 +20,19 @@ from kowpy.prompt import (
     PromptGenerator,
     TextGenerator,
 )
+
+__all__ = [
+    "map_directory",
+    "map_directory_json",
+    "Language",
+    "CodeAnalyzer",
+    "analyze_codebase",
+    "CodeSearchMatcher",
+    "Granularity",
+    "CodeSnippet",
+    "CodeBuilder",
+    "FIXER_PROMPT",
+    "SEARCH_PROMPT", 
+    "PromptGenerator",
+    "TextGenerator",
+]
