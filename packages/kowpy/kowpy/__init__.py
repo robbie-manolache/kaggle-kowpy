@@ -20,6 +20,7 @@ from kowpy.prompt import (
     PromptGenerator,
     TextGenerator,
 )
+from kowpy.pipeline import run_pipeline
 
 __all__ = [
     "map_directory",
@@ -35,4 +36,5 @@ __all__ = [
     "SEARCH_PROMPT", 
     "PromptGenerator",
     "TextGenerator",
+    "run_pipeline",
 ]
