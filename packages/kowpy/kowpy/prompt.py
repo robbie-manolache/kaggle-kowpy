@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import logging
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List, Dict, Union, Callable
 from .common import CodeSnippet
@@ -28,7 +29,8 @@ class PromptGenerator:
         return self.execute_prompt(self.user_prompt, **kwargs)
 
     def generate_messages(
-        self, system_kwargs: dict = None, user_kwargs: dict = None
+        self, system_kwargs: dict = None, user_kwargs: dict = None, 
+        verbose: bool = False
     ) -> List[Dict[str, str]]:
         """
         Generate messages list for LLM input with separate kwargs for each
@@ -37,6 +39,7 @@ class PromptGenerator:
         Args:
             system_kwargs: Keywords arguments for system prompt
             user_kwargs: Keyword arguments for user prompt
+            verbose: If True, log the generated messages
 
         Returns:
             List of message dictionaries with role and content
@@ -46,6 +49,10 @@ class PromptGenerator:
 
         system_text = self.get_system_prompt(**system_kwargs)
         user_text = self.get_user_prompt(**user_kwargs)
+
+        if verbose:
+            logging.info(f"System prompt:\n{system_text}")
+            logging.info(f"User prompt:\n{user_text}")
 
         return [
             {"role": "system", "content": system_text},
