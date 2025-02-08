@@ -1,4 +1,3 @@
-import logging
 from typing import Union
 
 from .code_analyzer import analyze_codebase
@@ -52,19 +51,16 @@ def run_pipeline(
         txtgen = model
         # Validate the TextGenerator instance
         if not hasattr(txtgen, "model") or txtgen.model is None:
-            logging.error("TextGenerator instance is not properly initialized")
-            return None
+            raise ValueError("TextGenerator is not properly initialized")
 
-    try:
-        txtgen.set_messages(search_msg)
-        txtgen.prepare_input()
-        txtgen.generate(max_new_tokens=1024)
-        search_output = txtgen.get_response()
-        if verbose:
-            logging.info(f"Search criteria generated:\n{search_output}")
-    except Exception as e:
-        logging.error(f"Error generating search criteria: {str(e)}")
-        return None
+    txtgen.set_messages(search_msg)
+    txtgen.prepare_input()
+    txtgen.generate(max_new_tokens=1024)
+    search_output = txtgen.get_response()
+    if verbose:
+        print(">>> SEARCH TASK OUTPUT START <<<\n")
+        print(search_output)
+        print("\n>>> SEARCH TASK OUTPUT END <<<")
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
@@ -82,16 +78,14 @@ def run_pipeline(
         user_kwargs=base_kwargs | {"snippets": snips}, verbose=verbose
     )
 
-    try:
-        txtgen.set_messages(fixer_msg)
-        txtgen.prepare_input()
-        txtgen.generate(max_new_tokens=9999)
-        fixer_output = txtgen.get_response()
-        if verbose:
-            logging.info(f"Fix suggestions generated:\n{fixer_output}")
-    except Exception as e:
-        logging.error(f"Error generating fixes: {str(e)}")
-        return None
+    txtgen.set_messages(fixer_msg)
+    txtgen.prepare_input()
+    txtgen.generate(max_new_tokens=9999)
+    fixer_output = txtgen.get_response()
+    if verbose:
+        print(">>> FIXER TASK OUTPUT START <<<\n")
+        print(fixer_output)
+        print("\n>>> FIXER TASK OUTPUT END <<<")
 
     # Process fixes and generate unified diff
     cbd.process_snippets(fixer_output)

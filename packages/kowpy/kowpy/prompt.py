@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import logging
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List, Dict, Union, Callable
 from .common import CodeSnippet
@@ -53,8 +52,12 @@ class PromptGenerator:
         user_text = self.get_user_prompt(**user_kwargs)
 
         if verbose:
-            logging.info(f"System prompt:\n{system_text}")
-            logging.info(f"User prompt:\n{user_text}")
+            print("\n>>> SYSTEM PROMPT START <<<\n")
+            print(system_text)
+            print("\n>>> SYSTEM PROMPT END <<<")
+            print("\n>>> USER PROMPT START <<<\n")
+            print(user_text)
+            print("\n>>> USER PROMPT END <<<")
 
         return [
             {"role": "system", "content": system_text},
@@ -75,12 +78,12 @@ Which files and objects require modification to resolve the issue?
 """
         + """
 Your response must be in the following format:
-
 ```json
-{
-    "files": ["path/to/file1.py", "path/to/file2.py"],
-    "objects": ["my_function_1", "my_fuction_2"],
-}
+[
+    {"file": "path/to/file1.py", "object": "my_function_1", "line": 250},
+    {"file": "path/to/file1.py", "object": "my_function_2", "line": 212},
+    {"file": "path/to/file2.py", "object": "my_function_3", "line": 518}
+]
 ```
 """
         + f"""
@@ -130,7 +133,7 @@ Only fix the snippets shown below in a way that fixes the problem:
 Revise only the labeled snippets and return the updated code.
 Follow the following format for each response (example only):
 
-### Snippet 15 | Path: /path/to/file.py
+### Snippet 15
 ```python
 def hello_world():
     print("Hello World!")
