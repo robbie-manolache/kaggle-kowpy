@@ -39,10 +39,12 @@ def run_pipeline(
     """
 
     # Prepare common kwargs for prompts
-    base_kwargs = {"problem": problem, "verbose": verbose}
+    base_kwargs = {"problem": problem}
 
     # Initialize text generator with model or validate existing one
-    search_msg = SEARCH_PROMPT.generate_messages(user_kwargs=base_kwargs)
+    search_msg = SEARCH_PROMPT.generate_messages(
+        user_kwargs=base_kwargs, verbose=verbose
+    )
 
     if isinstance(model, str):
         txtgen = TextGenerator(model)
@@ -77,7 +79,7 @@ def run_pipeline(
 
     # Generate fixes using LLM
     fixer_msg = FIXER_PROMPT.generate_messages(
-        user_kwargs=base_kwargs | {"snippets": snips}
+        user_kwargs=base_kwargs | {"snippets": snips}, verbose=verbose
     )
 
     try:
