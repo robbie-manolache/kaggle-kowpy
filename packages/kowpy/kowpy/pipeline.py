@@ -39,7 +39,7 @@ def run_pipeline(
     """
 
     # Prepare common kwargs for prompts
-    base_kwargs = {"problem": problem}
+    base_kwargs = {"problem": problem, "verbose": verbose}
 
     # Initialize text generator with model or validate existing one
     search_msg = SEARCH_PROMPT.generate_messages(user_kwargs=base_kwargs)

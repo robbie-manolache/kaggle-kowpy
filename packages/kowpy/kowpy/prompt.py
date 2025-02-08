@@ -29,8 +29,10 @@ class PromptGenerator:
         return self.execute_prompt(self.user_prompt, **kwargs)
 
     def generate_messages(
-        self, system_kwargs: dict = None, user_kwargs: dict = None, 
-        verbose: bool = False
+        self,
+        system_kwargs: dict = None,
+        user_kwargs: dict = None,
+        verbose: bool = False,
     ) -> List[Dict[str, str]]:
         """
         Generate messages list for LLM input with separate kwargs for each
