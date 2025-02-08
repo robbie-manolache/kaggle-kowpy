@@ -1,5 +1,7 @@
 from pathlib import Path
 import pandas as pd
+import logging
+from typing import Union
 
 from .code_analyzer import analyze_codebase
 from .code_builder import CodeBuilder
@@ -14,7 +16,7 @@ from .prompt import (
 def run_pipeline(
     repo_path: str,
     problem: str,
-    model_name: str,
+    model: Union[str, TextGenerator],
 ) -> str | None:
     """
     Run the complete analysis and modification pipeline on a repository.
@@ -40,17 +42,25 @@ def run_pipeline(
     # Prepare common kwargs for prompts
     base_kwargs = {"problem": problem}
 
-    # Initialize text generator with model
-    # Generate search criteria using LLM
+    # Initialize text generator with model or validate existing one
     search_msg = SEARCH_PROMPT.generate_messages(user_kwargs=base_kwargs)
-    txtgen = TextGenerator(model_name)
+    
+    if isinstance(model, str):
+        txtgen = TextGenerator(model)
+    else:
+        txtgen = model
+        # Validate the TextGenerator instance
+        if not hasattr(txtgen, '_model') or txtgen._model is None:
+            logging.error("TextGenerator instance is not properly initialized")
+            return None
 
     try:
         txtgen.set_messages(search_msg)
         txtgen.prepare_input()
         txtgen.generate()
         search_output = txtgen.get_response()
-    except Exception:
+    except Exception as e:
+        logging.error(f"Error generating search criteria: {str(e)}")
         return None
     
     # Analyze codebase and find relevant code sections
@@ -74,7 +84,8 @@ def run_pipeline(
         txtgen.prepare_input()
         txtgen.generate(max_new_tokens=9999)
         fixer_output = txtgen.get_response()
-    except Exception:
+    except Exception as e:
+        logging.error(f"Error generating fixes: {str(e)}")
         return None
     
     # Process fixes and generate unified diff
