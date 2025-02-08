@@ -22,18 +22,16 @@ def run_pipeline(
     Run the complete analysis and modification pipeline on a repository.
 
     This function:
-    1. Extracts problem details from the input DataFrame
-    2. Generates a search query using an LLM
-    3. Analyzes the codebase
-    4. Matches relevant code sections
-    5. Generates fixes using an LLM
-    6. Returns a unified diff of proposed changes
+    1. Generates a search query using an LLM
+    2. Analyzes the codebase
+    3. Matches relevant code sections
+    4. Generates fixes using an LLM
+    5. Returns a unified diff of proposed changes
 
     Args:
-        df: DataFrame containing repository and issue information
-        root_dir: Root directory containing repository data
-        issue_index: Index of the issue to process in the DataFrame
-        model_name: Name of the LLM model to use
+        repo_path: Path to the repository to analyze
+        problem: Description of the problem to fix
+        model: Either a model name string or an initialized TextGenerator instance
 
     Returns:
         String containing unified diff of proposed changes, or None if it fails
