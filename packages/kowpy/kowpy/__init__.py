@@ -1,6 +1,6 @@
 """KowPy - A Python package for code analysis and manipulation"""
 
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
 from kowpy.repo_map import (
     map_directory,
@@ -33,7 +33,7 @@ __all__ = [
     "CodeSnippet",
     "CodeBuilder",
     "FIXER_PROMPT",
-    "SEARCH_PROMPT", 
+    "SEARCH_PROMPT",
     "PromptGenerator",
     "TextGenerator",
     "run_pipeline",
