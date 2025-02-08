@@ -15,6 +15,7 @@ def run_pipeline(
     repo_path: str,
     problem: str,
     model: Union[str, TextGenerator],
+    verbose: bool = False,
 ) -> str | None:
     """
     Run the complete analysis and modification pipeline on a repository.
@@ -31,6 +32,7 @@ def run_pipeline(
         repo_path: Path to the repository to analyze
         problem: Description of the problem to fix
         model: Either a model name string or an initialized TextGenerator
+        verbose: If True, log the LLM responses for debugging
 
     Returns:
         String containing unified diff of proposed changes, or None if it fails
@@ -56,6 +58,8 @@ def run_pipeline(
         txtgen.prepare_input()
         txtgen.generate(max_new_tokens=1024)
         search_output = txtgen.get_response()
+        if verbose:
+            logging.info(f"Search criteria generated:\n{search_output}")
     except Exception as e:
         logging.error(f"Error generating search criteria: {str(e)}")
         return None
@@ -81,6 +85,8 @@ def run_pipeline(
         txtgen.prepare_input()
         txtgen.generate(max_new_tokens=9999)
         fixer_output = txtgen.get_response()
+        if verbose:
+            logging.info(f"Fix suggestions generated:\n{fixer_output}")
     except Exception as e:
         logging.error(f"Error generating fixes: {str(e)}")
         return None
