@@ -88,7 +88,7 @@ class CodeSearchMatcher:
         matched = 0
         total = len(file_parts)
 
-        for i in range(min(len(file_parts), total)):
+        for i in range(min(len(file_parts), len(search_parts))):
             if file_parts[-(i + 1)] == search_parts[-(i + 1)]:
                 matched += 1
             else:

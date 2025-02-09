@@ -1,6 +1,6 @@
 """KowPy - A Python package for code analysis and manipulation"""
 
-__version__ = "0.8.4"
+__version__ = "0.8.5"
 
 from kowpy.repo_map import (
     map_directory,

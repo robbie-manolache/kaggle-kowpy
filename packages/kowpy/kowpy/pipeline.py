@@ -66,7 +66,7 @@ def run_pipeline(
     df_code = analyze_codebase(directory=repo_path)
     csm = CodeSearchMatcher(search_output, Granularity.METHOD)
     _ = csm.match_against_df(df_code, directory=repo_path)
-    csm.rank_matches()
+    _ = csm.rank_matches()
     snips = csm.get_ranked_snippets()
 
     # Prepare code builder with matched snippets
