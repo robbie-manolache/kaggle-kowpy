@@ -308,7 +308,16 @@ class CodeBuilder:
             Set of all descendant node_ids
         """
         descendants = set()
-        children = self.df[self.df["parent"] == node_id]["node_id"].tolist()
+        
+        # Get the name of the parent node
+        parent_row = self.df[self.df["node_id"] == node_id]
+        if parent_row.empty:
+            return descendants
+            
+        parent_name = parent_row.iloc[0]["name"]
+        
+        # Find children using the parent's name
+        children = self.df[self.df["parent"] == parent_name]["node_id"].tolist()
         
         for child in children:
             descendants.add(child)
