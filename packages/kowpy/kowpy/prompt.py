@@ -129,7 +129,7 @@ Only fix the snippets shown below in a way that fixes the problem:
         else:
             desc = f"function `{obj}`"
         body += f"\nContains the code for {desc}:"
-        body += "\n```py\n\n" + snip.code + "\n```\n\n"
+        body += "\n```python\n\n" + snip.code + "\n```\n\n"
         fix_prompt += body
 
     example_ids = [15, 42]
