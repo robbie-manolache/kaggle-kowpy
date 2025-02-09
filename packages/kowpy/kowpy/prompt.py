@@ -135,7 +135,7 @@ Only fix the snippets shown below in a way that fixes the problem:
     example_ids = [15, 42]
     while any([i in snippet_ids for i in example_ids]):
         example_ids = np.random.randint(low=0, high=500, size=2)
-    snippet_ids = ", ".join(snippet_ids)
+    snippet_ids = ", ".join([str(i) for i in snippet_ids])
 
     fix_prompt += f"""
 Revise only the labeled snippets and return the updated code.
