@@ -55,7 +55,7 @@ def run_pipeline(
 
     txtgen.set_messages(search_msg)
     txtgen.prepare_input()
-    txtgen.generate(max_new_tokens=1024)
+    txtgen.generate(max_new_tokens=512)
     search_output = txtgen.get_response()
     if verbose:
         print(">>> SEARCH TASK OUTPUT START <<<\n")
@@ -80,7 +80,15 @@ def run_pipeline(
 
     txtgen.set_messages(fixer_msg)
     txtgen.prepare_input()
-    txtgen.generate(max_new_tokens=9999)
+    if txtgen.prompt_tokens_over_limit:
+        # TODO: revisit matching df and see if we can identify children
+        # if it's a larger parent causing the large token size
+        # e.g. a monolithic class object
+        if verbose:
+            print("!!! Skipping issue due to large prompt size...")
+        return None
+
+    txtgen.generate()
     fixer_output = txtgen.get_response()
     if verbose:
         print(">>> FIXER TASK OUTPUT START <<<\n")

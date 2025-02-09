@@ -175,12 +175,13 @@ reported by users.
 class TextGenerator:
     """A class to handle text generation using transformer models."""
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, max_tokens: int = 4096):
         """
         Initialize the text generator with a model.
 
         Args:
             model_name (str): Path or name of the model to load
+            max_tokens (int): Maximum number of input tokens allowed (default: 4096)
         """
         self.model_name = model_name
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -189,9 +190,12 @@ class TextGenerator:
             device_map="auto",
         )
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.max_tokens = max_tokens
         self.messages = None
         self.text = None
         self.model_inputs = None
+        self.input_length = None
+        self.prompt_tokens_over_limit = False
         self.generated_ids = None
         self.response = None
 
@@ -220,7 +224,12 @@ class TextGenerator:
             self.messages = messages
 
     def prepare_input(self) -> None:
-        """Prepare the input for the model."""
+        """
+        Prepare the input for the model.
+        
+        Raises:
+            ValueError: If messages not set or input exceeds token limit
+        """
         if self.messages is None:
             raise ValueError("Messages not set. Call set_messages first.")
 
@@ -232,8 +241,18 @@ class TextGenerator:
         self.model_inputs = self.tokenizer(
             [self.text], return_tensors="pt"
         ).to(self.model.device)
+        
+        # Check token length
+        self.input_length = self.model_inputs.input_ids.shape[1]
+        if self.input_length > self.max_tokens:
+            import warnings
+            warnings.warn(
+                f"Input length ({self.input_length} tokens) exceeds "
+                f"maximum allowed tokens ({self.max_tokens})"
+            )
+            self.prompt_tokens_over_limit = True
 
-    def generate(self, max_new_tokens: int = 512) -> None:
+    def generate(self, max_new_tokens: int | None = None) -> None:
         """
         Generate text based on the prepared input.
 
@@ -242,10 +261,16 @@ class TextGenerator:
         """
         if self.model_inputs is None:
             raise ValueError("Input not prepared. Call prepare_input first.")
+        
+        if self.prompt_tokens_over_limit:
+            raise ValueError(
+                f"Input length ({self.input_length} tokens) exceeds maximum "
+                f"allowed tokens ({self.max_tokens})"
+            )
 
         generated_ids = self.model.generate(
             **self.model_inputs,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=max_new_tokens or self.max_tokens,
         )
         self.generated_ids = [
             output_ids[len(input_ids) :]
