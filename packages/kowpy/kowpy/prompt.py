@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List, Dict, Union, Callable
 from .common import CodeSnippet
-
+import numpy as np
 
 @dataclass
 class PromptGenerator:
@@ -118,7 +118,9 @@ Do not fix any of the code shown above.
 Only fix the snippets shown below in a way that fixes the problem:
 """
 
+    snippet_ids = []
     for snip in snippets:
+        snippet_ids.append(snip.node_id)
         body = f"\n### Snippet {snip.node_id}"
         obj, parent = snip.object_name, snip.parent_name
         if parent:
@@ -129,14 +131,27 @@ Only fix the snippets shown below in a way that fixes the problem:
         body += "\n```py\n\n" + snip.code + "\n```\n\n"
         fix_prompt += body
 
-    fix_prompt += """
-Revise only the labeled snippets and return the updated code.
-Follow the following format for each response (example only):
+    example_ids = [15, 42]
+    while any([i in snippet_ids for i in example_ids]):
+        example_ids = np.random.randint(low=0, high=500, size=2)
+    snippet_ids = ", ".join(snippet_ids)
 
-### Snippet 15
+    fix_prompt += f"""
+Revise only the labeled snippets and return the updated code.
+Use the following example format for the response:
+
+### Snippet {example_ids[0]}
 ```python
 def hello_world():
     print("Hello World!")
+
+### Snippet {example_ids[1]}
+```python
+def goodbye_cruel_world():
+    print("Goodbye Cruel World!")
+
+This is an example only. In your respose you must only provide fixes for \
+the snippets with IDs {snippet_ids}.
 ```
 
 Maintain the original indentation from the snippets.
