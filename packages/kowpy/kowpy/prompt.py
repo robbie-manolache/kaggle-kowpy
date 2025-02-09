@@ -181,7 +181,8 @@ class TextGenerator:
 
         Args:
             model_name (str): Path or name of the model to load
-            max_tokens (int): Maximum number of input tokens allowed (default: 4096)
+            max_tokens (int): Maximum number of input tokens allowed
+                (default: 4096)
         """
         self.model_name = model_name
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -226,7 +227,7 @@ class TextGenerator:
     def prepare_input(self) -> None:
         """
         Prepare the input for the model.
-        
+
         Raises:
             ValueError: If messages not set or input exceeds token limit
         """
@@ -241,11 +242,12 @@ class TextGenerator:
         self.model_inputs = self.tokenizer(
             [self.text], return_tensors="pt"
         ).to(self.model.device)
-        
+
         # Check token length
         self.input_length = self.model_inputs.input_ids.shape[1]
         if self.input_length > self.max_tokens:
             import warnings
+
             warnings.warn(
                 f"Input length ({self.input_length} tokens) exceeds "
                 f"maximum allowed tokens ({self.max_tokens})"
@@ -261,7 +263,7 @@ class TextGenerator:
         """
         if self.model_inputs is None:
             raise ValueError("Input not prepared. Call prepare_input first.")
-        
+
         if self.prompt_tokens_over_limit:
             raise ValueError(
                 f"Input length ({self.input_length} tokens) exceeds maximum "

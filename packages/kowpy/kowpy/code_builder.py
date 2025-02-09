@@ -300,29 +300,30 @@ class CodeBuilder:
     def _get_all_descendants(self, node_id: int) -> set[int]:
         """
         Recursively get all descendant node_ids for a given node
-        
+
         Args:
             node_id: The parent node_id to find descendants for
-            
+
         Returns:
             Set of all descendant node_ids
         """
         descendants = set()
-        
+
         # Get the name of the parent node
         parent_row = self.df[self.df["node_id"] == node_id]
         if parent_row.empty:
             return descendants
-            
+
         parent_name = parent_row.iloc[0]["name"]
-        
+
         # Find children using the parent's name
-        children = self.df[self.df["parent"] == parent_name]["node_id"].tolist()
-        
+        parent_match = self.df["parent"] == parent_name
+        children = self.df[parent_match]["node_id"].tolist()
+
         for child in children:
             descendants.add(child)
             descendants.update(self._get_all_descendants(child))
-            
+
         return descendants
 
     def compile_file_code(
@@ -353,17 +354,17 @@ class CodeBuilder:
 
         # Get all rows for this file
         file_rows = self.df[self.df["path"] == str(path)]
-        
+
         # Get all descendants of modified parent nodes
         nodes_to_remove = set()
         for node_id in self.modified_blocks.keys():
             if isinstance(node_id, int):  # Skip file paths
                 nodes_to_remove.update(self._get_all_descendants(node_id))
-                
+
         # Remove descendants from file_rows
         if nodes_to_remove:
             file_rows = file_rows[~file_rows["node_id"].isin(nodes_to_remove)]
-            
+
         # Sort by line number
         file_rows = file_rows.sort_values("start_line")
 
