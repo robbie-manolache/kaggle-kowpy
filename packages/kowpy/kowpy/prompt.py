@@ -4,6 +4,7 @@ from typing import List, Dict, Union, Callable
 from .common import CodeSnippet
 import numpy as np
 
+
 @dataclass
 class PromptGenerator:
     """A class to generate system and user prompts for LLM input."""
