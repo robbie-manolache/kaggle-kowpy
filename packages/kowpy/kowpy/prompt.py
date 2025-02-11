@@ -159,7 +159,9 @@ the snippets with IDs {snippet_ids}.
 
 Maintain the original indentation from the snippets.
 Make sure to label each response snippet correctly.
+"""
 
+    fix_prompt += """
 If you are confident the code changes have resolved \
 the issue, then end your response with:
 
