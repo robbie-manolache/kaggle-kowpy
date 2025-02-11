@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import json
 from typing import List, Dict, Union, Callable
 from .common import CodeSnippet
 import numpy as np
@@ -314,3 +315,38 @@ class TextGenerator:
         if self.response is None:
             raise ValueError("No response generated. Call generate first.")
         return self.response[index]
+
+    @staticmethod
+    def parse_status(response_text: str) -> bool:
+        """
+        Parse the response text to determine if status is SUCCESS.
+        
+        Args:
+            response_text (str): The response text to parse
+            
+        Returns:
+            bool: True if status is SUCCESS, False otherwise
+        """
+        try:
+            # Look for any JSON-like strings in the response
+            start_pos = response_text.find('{')
+            while start_pos != -1:
+                end_pos = response_text.find('}', start_pos) + 1
+                if end_pos == 0:  # No closing brace found
+                    break
+                    
+                json_str = response_text[start_pos:end_pos]
+                try:
+                    status_obj = json.loads(json_str)
+                    if "status" in status_obj:
+                        return status_obj["status"] == "SUCCESS"
+                except json.JSONDecodeError:
+                    pass
+                
+                # Look for next JSON object
+                start_pos = response_text.find('{', end_pos)
+                
+            return False  # No valid status found
+            
+        except Exception:
+            return False  # Any parsing error defaults to False
