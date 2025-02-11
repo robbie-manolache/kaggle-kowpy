@@ -145,18 +145,34 @@ Use the following example format for the response:
 ```python
 def hello_world():
     print("Hello World!")
+```
 
 ### Snippet {example_ids[1]}
 ```python
 def goodbye_cruel_world():
     print("Goodbye Cruel World!")
+```
 
 This is an example only. In your respose you must only provide fixes for \
 the snippets with IDs {snippet_ids}.
-```
 
 Maintain the original indentation from the snippets.
 Make sure to label each response snippet correctly.
+
+If you are confident the code changes have resolved \
+the issue, then end your response with:
+
+```json
+{"status": "SUCCESS"}
+```
+
+If more work is required to resolve the issue \
+then end your response with:
+
+```json
+{"status": "INCOMPLETE"}
+```
+
 """
 
     return fix_prompt
