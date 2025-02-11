@@ -95,6 +95,12 @@ def run_pipeline(
         print(fixer_output)
         print("\n>>> FIXER TASK OUTPUT END <<<")
 
+    # Check if the fix was successful
+    if not TextGenerator.parse_status(fixer_output):
+        if verbose:
+            print("!!! Skipping issue due to INCOMPLETE status...")
+        return None
+
     # Process fixes and generate unified diff
     cbd.process_snippets(fixer_output)
     paths = set([s.file_path for s in snips])
