@@ -84,8 +84,7 @@ def run_pipeline(
         # TODO: revisit matching df and see if we can identify children
         # if it's a larger parent causing the large token size
         # e.g. a monolithic class object
-        if verbose:
-            print("!!! Skipping issue due to large prompt size...")
+        print("!!! Skipping issue due to large prompt size...")
         return None
 
     txtgen.generate()
@@ -96,9 +95,8 @@ def run_pipeline(
         print("\n>>> FIXER TASK OUTPUT END <<<")
 
     # Check if the fix was successful
-    if not TextGenerator.parse_status(fixer_output):
-        if verbose:
-            print("!!! Skipping issue due to INCOMPLETE status...")
+    if not txtgen.parse_status(fixer_output):
+        print("!!! Skipping issue due to INCOMPLETE status...")
         return None
 
     # Process fixes and generate unified diff
