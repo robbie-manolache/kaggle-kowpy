@@ -321,22 +321,22 @@ class TextGenerator:
         """
         Parse the response text to determine if status is SUCCESS.
         Looks specifically for ```json blocks containing status.
-        
+
         Args:
             response_text (str): The response text to parse
-            
+
         Returns:
             bool: True if status is SUCCESS, False otherwise
         """
         try:
             # Look for ```json blocks
             json_blocks = response_text.split("```json")
-            for block in json_blocks[1:]:  # Skip first split which is before any json
+            for block in json_blocks[1:]:  # Skip first split before any json
                 # Find the end of the block
                 end_pos = block.find("```")
                 if end_pos == -1:
                     continue
-                    
+
                 # Extract and parse the JSON content
                 json_str = block[:end_pos].strip()
                 try:
@@ -345,8 +345,8 @@ class TextGenerator:
                         return status_obj["status"] == "SUCCESS"
                 except json.JSONDecodeError:
                     continue
-                
+
             return False  # No valid status found
-            
+
         except Exception:
             return False  # Any parsing error defaults to False
