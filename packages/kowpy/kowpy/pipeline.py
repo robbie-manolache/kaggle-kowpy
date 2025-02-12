@@ -15,6 +15,7 @@ def run_pipeline(
     problem: str,
     model: Union[str, TextGenerator],
     verbose: bool = False,
+    print_list: list[str] | None = None,
 ) -> str | None:
     """
     Run the complete analysis and modification pipeline on a repository.
@@ -32,10 +33,14 @@ def run_pipeline(
         problem: Description of the problem to fix
         model: Either a model name string or an initialized TextGenerator
         verbose: If True, log the LLM responses for debugging
+        print_list: Overrides verbose=False for specified items
 
     Returns:
         String containing unified diff of proposed changes, or None if it fails
     """
+
+    # print list for verbose overrides
+    print_list = print_list or []
 
     # Prepare common kwargs for prompts
     base_kwargs = {"problem": problem}
@@ -57,7 +62,7 @@ def run_pipeline(
     txtgen.prepare_input()
     txtgen.generate(max_new_tokens=512)
     search_output = txtgen.get_response()
-    if verbose:
+    if verbose or ("search_output" in print_list):
         print(">>> SEARCH TASK OUTPUT START <<<\n")
         print(search_output)
         print("\n>>> SEARCH TASK OUTPUT END <<<")
@@ -67,6 +72,8 @@ def run_pipeline(
     csm = CodeSearchMatcher(search_output, Granularity.METHOD)
     _ = csm.match_against_df(df_code, directory=repo_path)
     _ = csm.rank_matches()
+    if verbose or ("ranked_matches" in print_list):
+        print(csm.ranked_matches_df)
     snips = csm.get_ranked_snippets()
 
     # Prepare code builder with matched snippets
@@ -95,8 +102,9 @@ def run_pipeline(
         print("\n>>> FIXER TASK OUTPUT END <<<")
 
     # Check if the fix was successful
-    if not txtgen.parse_status(fixer_output):
-        print("!!! Skipping issue due to INCOMPLETE status...")
+    status = txtgen.parse_status(fixer_output)
+    if not status == txtgen.ResponseStatus.SUCCESS:
+        print(f"!!! Skipping issue due to {status.name} status...")
         return None
 
     # Process fixes and generate unified diff

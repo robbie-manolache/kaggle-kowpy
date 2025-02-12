@@ -313,6 +313,7 @@ class TextGenerator:
 
     class ResponseStatus(Enum):
         """Enum for response status parsing results"""
+
         SUCCESS = auto()
         INCOMPLETE = auto()
         UNKNOWN = auto()
@@ -327,7 +328,7 @@ class TextGenerator:
             response_text (str): The response text to parse
 
         Returns:
-            ResponseStatus: Enum indicating SUCCESS, INCOMPLETE, or UNKNOWN status
+            ResponseStatus: SUCCESS, INCOMPLETE, or UNKNOWN enum status
         """
         try:
             # Look for ```json blocks
@@ -351,7 +352,9 @@ class TextGenerator:
                 except json.JSONDecodeError:
                     continue
 
-            return TextGenerator.ResponseStatus.UNKNOWN  # No valid status found
+            # No valid status found
+            return TextGenerator.ResponseStatus.UNKNOWN
 
         except Exception:
-            return TextGenerator.ResponseStatus.UNKNOWN  # Any parsing error defaults to UNKNOWN
+            # Any parsing error defaults to UNKNOWN
+            return TextGenerator.ResponseStatus.UNKNOWN
