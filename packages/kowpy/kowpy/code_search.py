@@ -132,17 +132,29 @@ class CodeSearchMatcher:
                     if row["name"] == search_object:
                         # Store the score for this path
                         self.path_scores[row["path"]] = score
+                        
+                        # Check parent match
+                        search_parent = target.get("parent")
+                        code_parent = row.get("parent")
+                        parent_match = (
+                            (search_parent == code_parent)
+                            if search_parent is not None
+                            else (code_parent is None)
+                        )
+                        
                         matches.append(
                             {
                                 **row,
                                 "target_id": target_id,
                                 "path_match_score": score.score,
+                                "parent_match": parent_match,
                                 "line_match": (
                                     row["start_line"]
                                     <= search_line
                                     <= row["end_line"]
                                     if "start_line" in row
                                     and "end_line" in row
+                                    and search_line > 0
                                     else False
                                 ),
                             }
@@ -177,9 +189,11 @@ class CodeSearchMatcher:
             if not child_matches.empty:
                 # Dedupe best child matches by parent
                 key_cols = ["parent", "path"]
-                sort_cols = ["path_match_score", "line_match"]
+                sort_cols = ["path_match_score", "parent_match", "line_match"]
                 child_cols = [*key_cols, "target_id", *sort_cols]
-                child_agg = child_matches[child_cols].sort_values(sort_cols)
+                child_agg = child_matches[child_cols].sort_values(
+                    sort_cols, ascending=[False, False, False]
+                )
                 child_agg = child_agg.drop_duplicates(subset=key_cols)
 
                 # Rename column to match original df
@@ -221,10 +235,10 @@ class CodeSearchMatcher:
             self.ranked_matches_df = pd.DataFrame()
             return self.ranked_matches_df
 
-        # Sort by target_id, path_match_score, and then line_match
+        # Sort by target_id, path_match_score, parent_match, and then line_match
         sorted_df = self.matches_df.sort_values(
-            by=["target_id", "path_match_score", "line_match"],
-            ascending=[True, False, False],
+            by=["target_id", "path_match_score", "parent_match", "line_match"],
+            ascending=[True, False, False, False],
         )
 
         # Keep only the best match for each target_id
