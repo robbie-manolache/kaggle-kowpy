@@ -132,7 +132,7 @@ class CodeSearchMatcher:
                     if row["name"] == search_object:
                         # Store the score for this path
                         self.path_scores[row["path"]] = score
-                        
+
                         # Check parent match
                         search_parent = target.get("parent")
                         code_parent = row.get("parent")
@@ -140,7 +140,7 @@ class CodeSearchMatcher:
                             parent_match = search_parent == code_parent
                         else:
                             parent_match = False
-                        
+
                         matches.append(
                             {
                                 **row,
