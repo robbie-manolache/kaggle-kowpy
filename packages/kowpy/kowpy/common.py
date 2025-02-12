@@ -53,8 +53,9 @@ def has_substantive_changes(diff_str: str) -> bool:
     """
     lines = diff_str.splitlines()
     for line in lines:
-        # Skip diff headers and context lines
-        if not line.startswith('+') and not line.startswith('-'):
+        # Skip diff headers, context lines, and file marker lines
+        if (not line.startswith('+') and not line.startswith('-')) or \
+           line.startswith('+++') or line.startswith('---'):
             continue
         # Skip empty added/removed lines
         if line in ['+', '-']:
