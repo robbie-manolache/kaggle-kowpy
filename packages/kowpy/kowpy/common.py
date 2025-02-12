@@ -49,7 +49,7 @@ def has_substantive_changes(diff_str: str) -> bool:
         diff_str: Unified diff string (from difflib.unified_diff)
         
     Returns:
-        True if diff contains actual code changes, False if only whitespace/empty lines
+        True if diff contains actual code changes, False if only empty lines
     """
     lines = diff_str.splitlines()
     for line in lines:
