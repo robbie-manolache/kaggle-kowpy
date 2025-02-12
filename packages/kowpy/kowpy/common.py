@@ -39,3 +39,27 @@ class CodeSnippet:
     object_name: str
     parent_name: str | None
     code: str | None
+
+
+def has_substantive_changes(diff_str: str) -> bool:
+    """
+    Check if a unified diff string contains substantive changes.
+    
+    Args:
+        diff_str: Unified diff string (from difflib.unified_diff)
+        
+    Returns:
+        True if diff contains actual code changes, False if only whitespace/empty lines
+    """
+    lines = diff_str.splitlines()
+    for line in lines:
+        # Skip diff headers and context lines
+        if not line.startswith('+') and not line.startswith('-'):
+            continue
+        # Skip empty added/removed lines
+        if line in ['+', '-']:
+            continue
+        # If we find a non-empty added/removed line, it's substantive
+        if line.strip('+- '):
+            return True
+    return False

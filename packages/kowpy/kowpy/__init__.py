@@ -12,7 +12,7 @@ from kowpy.code_analyzer import (
     analyze_codebase,
 )
 from kowpy.code_search import CodeSearchMatcher, Granularity
-from kowpy.common import CodeSnippet
+from kowpy.common import CodeSnippet, has_substantive_changes
 from kowpy.code_builder import CodeBuilder
 from kowpy.prompt import (
     FIXER_PROMPT,
@@ -31,6 +31,7 @@ __all__ = [
     "CodeSearchMatcher",
     "Granularity",
     "CodeSnippet",
+    "has_substantive_changes",
     "CodeBuilder",
     "FIXER_PROMPT",
     "SEARCH_PROMPT",
