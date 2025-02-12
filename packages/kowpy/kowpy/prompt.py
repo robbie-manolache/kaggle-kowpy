@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
 from typing import List, Dict, Union, Callable
@@ -310,17 +311,23 @@ class TextGenerator:
             raise ValueError("No response generated. Call generate first.")
         return self.response[index]
 
+    class ResponseStatus(Enum):
+        """Enum for response status parsing results"""
+        SUCCESS = auto()
+        INCOMPLETE = auto()
+        UNKNOWN = auto()
+
     @staticmethod
-    def parse_status(response_text: str) -> bool:
+    def parse_status(response_text: str) -> "TextGenerator.ResponseStatus":
         """
-        Parse the response text to determine if status is SUCCESS.
+        Parse the response text to determine the completion status.
         Looks specifically for ```json blocks containing status.
 
         Args:
             response_text (str): The response text to parse
 
         Returns:
-            bool: True if status is SUCCESS, False otherwise
+            ResponseStatus: Enum indicating SUCCESS, INCOMPLETE, or UNKNOWN status
         """
         try:
             # Look for ```json blocks
@@ -336,11 +343,15 @@ class TextGenerator:
                 try:
                     status_obj = json.loads(json_str)
                     if "status" in status_obj:
-                        return status_obj["status"] == "SUCCESS"
+                        status = status_obj["status"].upper()
+                        if status == "SUCCESS":
+                            return TextGenerator.ResponseStatus.SUCCESS
+                        elif status == "INCOMPLETE":
+                            return TextGenerator.ResponseStatus.INCOMPLETE
                 except json.JSONDecodeError:
                     continue
 
-            return False  # No valid status found
+            return TextGenerator.ResponseStatus.UNKNOWN  # No valid status found
 
         except Exception:
-            return False  # Any parsing error defaults to False
+            return TextGenerator.ResponseStatus.UNKNOWN  # Any parsing error defaults to UNKNOWN
