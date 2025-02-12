@@ -12,20 +12,20 @@ JSON_OUTPUT_EXAMPLE = """
     {
         "file": "path/to/file1.py", 
         "object": "my_function_2", 
-        "line": None,
-        "parent": None
+        "line": null,
+        "parent": null
     },
     {
         "file": "path/to/file2.py", 
         "object": "my_function_3", 
         "line": 518,
-        "parent": None
+        "parent": null
     }
 ]
 ```
 
-If you cannot find a line number for the object, leave "line" as None.
-If the object is not part of a Class, leave "parent" as None.
+If you cannot find a line number for the object, leave "line" as null.
+If the object is not part of a Class, leave "parent" as null.
 For "file", you may infer relative file paths from import statements.
 """
 

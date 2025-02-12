@@ -136,11 +136,10 @@ class CodeSearchMatcher:
                         # Check parent match
                         search_parent = target.get("parent")
                         code_parent = row.get("parent")
-                        parent_match = (
-                            (search_parent == code_parent)
-                            if search_parent is not None
-                            else (code_parent is None)
-                        )
+                        if code_parent and search_parent:
+                            parent_match = search_parent == code_parent
+                        else:
+                            parent_match = False
                         
                         matches.append(
                             {
@@ -172,6 +171,7 @@ class CodeSearchMatcher:
             # Group by path and aggregate
             agg_dict = {
                 "path_match_score": "max",
+                "parent_match": "max",
                 "line_match": "max",
                 "start_line": "min",
                 "end_line": "max",
@@ -235,7 +235,7 @@ class CodeSearchMatcher:
             self.ranked_matches_df = pd.DataFrame()
             return self.ranked_matches_df
 
-        # Sort by target_id, path_match_score, parent_match, and then line_match
+        # Sort by target_id, path_match_score, parent_match, then line_match
         sorted_df = self.matches_df.sort_values(
             by=["target_id", "path_match_score", "parent_match", "line_match"],
             ascending=[True, False, False, False],
