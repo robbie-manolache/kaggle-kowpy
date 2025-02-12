@@ -8,16 +8,6 @@ import pandas as pd
 from .code_analyzer import CodeObject
 from .common import CodeSnippet
 
-EXAMPLE = """
-```json
-[
-    {"file": "path/to/file1.py", "object": "my_function_1", "line": 250},
-    {"file": "path/to/file1.py", "object": "my_function_2", "line": 212},
-    {"file": "path/to/file2.py", "object": "my_function_3", "line": 518}
-]
-```
-"""
-
 
 class Granularity(Enum):
     """Controls the level at which code modifications are tracked"""

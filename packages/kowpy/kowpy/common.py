@@ -1,5 +1,34 @@
 from dataclasses import dataclass
 
+JSON_OUTPUT_EXAMPLE = """
+```json
+[
+    {
+        "file": "path/to/file1.py", 
+        "object": "my_function_1", 
+        "line": 250,
+        "parent": "ClassFoo"
+    },
+    {
+        "file": "path/to/file1.py", 
+        "object": "my_function_2", 
+        "line": None,
+        "parent": None
+    },
+    {
+        "file": "path/to/file2.py", 
+        "object": "my_function_3", 
+        "line": 518,
+        "parent": None
+    }
+]
+```
+
+If you cannot find a line number for the object, leave "line" as None.
+If the object is not part of a Class, leave "parent" as None.
+For "file", you may infer relative file paths from import statements.
+"""
+
 
 @dataclass
 class CodeSnippet:

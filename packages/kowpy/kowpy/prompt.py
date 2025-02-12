@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
 from typing import List, Dict, Union, Callable
-from .common import CodeSnippet
+from .common import JSON_OUTPUT_EXAMPLE, CodeSnippet
 import numpy as np
 
 
@@ -72,22 +72,14 @@ def search_user_prompt(problem: str) -> str:
 
     return (
         f"""
-You are working in a code repo on the following problem:
+You are working in a code repo on the following problem statement:
 
 {problem}
 
 Which files and objects require modification to resolve the issue?
-"""
-        + """
 Your response must be in the following format:
-```json
-[
-    {"file": "path/to/file1.py", "object": "my_function_1", "line": 250},
-    {"file": "path/to/file1.py", "object": "my_function_2", "line": 212},
-    {"file": "path/to/file2.py", "object": "my_function_3", "line": 518}
-]
-```
 """
+        + JSON_OUTPUT_EXAMPLE
         + f"""
 Do not attempt to solve the issue.
 Make sure to consider all relevant file paths and objects, \
