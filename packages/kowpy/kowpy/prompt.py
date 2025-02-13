@@ -3,7 +3,13 @@ from enum import Enum, auto
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import json
 from typing import List, Dict, Union, Callable
-from .common import JSON_OUTPUT_EXAMPLE, CodeSnippet
+from .common import (
+    SearchMode,
+    JSON_SEARCH_LINE_ONLY,
+    JSON_SEARCH_PARENT_ONLY,
+    JSON_SEARCH_LINE_AND_PARENT,
+    CodeSnippet,
+)
 import numpy as np
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 import pandas as pd
 from .code_analyzer import CodeObject
-from .common import CodeSnippet
+from .common import CodeSnippet, SearchMode
 
 
 class Granularity(Enum):
