@@ -1,6 +1,57 @@
 from dataclasses import dataclass
 
-JSON_OUTPUT_EXAMPLE = """
+JSON_SEARCH_LL = """
+```json
+[
+    {
+        "file": "path/to/file1.py",
+        "object": "my_function_1",
+        "line": 250,
+    },
+    {
+        "file": "path/to/file1.py",
+        "object": "my_function_2",
+        "line": null,
+    },
+    {
+        "file": "path/to/file2.py",
+        "object": "my_function_3",
+        "line": 518
+    }
+]
+```
+
+If you cannot find a line number for the object, leave "line" as null.
+Pay close attention to error messages for line numbers.
+For "file", you may infer relative file paths from import statements.
+"""
+
+JSON_SEARCH_PP = """
+```json
+[
+    {
+        "file": "path/to/file1.py",
+        "object": "my_function_1",
+        "parent": "ClassFoo"
+    },
+    {
+        "file": "path/to/file1.py",
+        "object": "my_function_2",
+        "parent": null
+    },
+    {
+        "file": "path/to/file2.py",
+        "object": "my_function_3",
+        "parent": "ClassBar"
+    }
+]
+```
+
+If the object is not part of a Class, leave "parent" as null.
+For "file", you may infer relative file paths from import statements.
+"""
+
+JSON_SEARCH_LP = """
 ```json
 [
     {
@@ -25,6 +76,7 @@ JSON_OUTPUT_EXAMPLE = """
 ```
 
 If you cannot find a line number for the object, leave "line" as null.
+Pay close attention to error messages for line numbers.
 If the object is not part of a Class, leave "parent" as null.
 For "file", you may infer relative file paths from import statements.
 """
