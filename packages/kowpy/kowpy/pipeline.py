@@ -3,17 +3,16 @@ from typing import Union
 from .code_analyzer import analyze_codebase
 from .code_builder import CodeBuilder
 from .code_search import Granularity, CodeSearchMatcher
-from .prompt import (
-    FIXER_PROMPT,
-    SEARCH_PROMPT,
-    TextGenerator,
-)
+from .common import SearchMode
+from .prompt import FIXER_PROMPT, SEARCH_PROMPT
+from .model import TextGenerator
 
 
 def run_pipeline(
     repo_path: str,
     problem: str,
     model: Union[str, TextGenerator],
+    search_mode: SearchMode = SearchMode.LINE_ONLY,
     verbose: bool = False,
     print_list: list[str] | None = None,
 ) -> str | None:
@@ -32,6 +31,7 @@ def run_pipeline(
         repo_path: Path to the repository to analyze
         problem: Description of the problem to fix
         model: Either a model name string or an initialized TextGenerator
+        search_mode: Controls which JSON template to use for searching
         verbose: If True, log the LLM responses for debugging
         print_list: Overrides verbose=False for specified items
 
@@ -47,7 +47,8 @@ def run_pipeline(
 
     # Initialize text generator with model or validate existing one
     search_msg = SEARCH_PROMPT.generate_messages(
-        user_kwargs=base_kwargs, verbose=verbose
+        user_kwargs=base_kwargs | {"search_mode": search_mode},
+        verbose=verbose,
     )
 
     if isinstance(model, str):
@@ -69,7 +70,7 @@ def run_pipeline(
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
-    csm = CodeSearchMatcher(search_output, Granularity.METHOD)
+    csm = CodeSearchMatcher(search_output, search_mode, Granularity.METHOD)
     _ = csm.match_against_df(df_code, directory=repo_path)
     _ = csm.rank_matches()
     if verbose or ("ranked_matches" in print_list):

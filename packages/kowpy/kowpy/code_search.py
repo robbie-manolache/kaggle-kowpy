@@ -60,7 +60,7 @@ class CodeSearchMatcher:
         # Add target_id to each search target
         self.search_targets = []
         self.search_mode = search_mode
-        
+
         for i, target in enumerate(
             search_data if isinstance(search_data, list) else []
         ):
@@ -69,7 +69,7 @@ class CodeSearchMatcher:
                 target.setdefault("parent", None)
             elif search_mode == SearchMode.PARENT_ONLY:
                 target.setdefault("line", None)
-            
+
             target["target_id"] = i
             self.search_targets.append(target)
 
@@ -125,7 +125,8 @@ class CodeSearchMatcher:
         for target in self.search_targets:
             search_path = target["file"]
             search_object = target["object"]
-            search_line = target["line"] or -1
+            search_line = target.get("line") or -1
+            search_parent = target.get("parent")
 
             target_id = target["target_id"]
             # Find matching rows for this target
@@ -145,7 +146,6 @@ class CodeSearchMatcher:
                         self.path_scores[row["path"]] = score
 
                         # Check parent match
-                        search_parent = target.get("parent")
                         code_parent = row.get("parent")
                         if code_parent and search_parent:
                             parent_match = search_parent == code_parent
