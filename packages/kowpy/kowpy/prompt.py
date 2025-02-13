@@ -68,8 +68,19 @@ class PromptGenerator:
         ]
 
 
-def search_user_prompt(problem: str) -> str:
-    """Generate prompt to search for objects/files in a repo"""
+def search_user_prompt(problem: str, search_mode: SearchMode) -> str:
+    """
+    Generate prompt to search for objects/files in a repo
+
+    Args:
+        problem: Problem statement to analyze
+        search_mode: Controls which JSON template to use
+    """
+    json_template = {
+        SearchMode.LINE_ONLY: JSON_SEARCH_LINE_ONLY,
+        SearchMode.PARENT_ONLY: JSON_SEARCH_PARENT_ONLY,
+        SearchMode.LINE_AND_PARENT: JSON_SEARCH_LINE_AND_PARENT,
+    }[search_mode]
 
     return (
         f"""
@@ -80,7 +91,7 @@ You are working in a code repo on the following problem statement:
 Which files and objects require modification to resolve the issue?
 Your response must be in the following format:
 """
-        + JSON_OUTPUT_EXAMPLE
+        + json_template
         + f"""
 Do not attempt to solve the issue.
 Make sure to consider all relevant file paths and objects, \

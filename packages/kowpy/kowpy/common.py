@@ -1,6 +1,13 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 
-JSON_SEARCH_LL = """
+class SearchMode(Enum):
+    """Controls which fields are used for code search matching"""
+    LINE_ONLY = auto()
+    PARENT_ONLY = auto()
+    LINE_AND_PARENT = auto()
+
+JSON_SEARCH_LINE_ONLY = """
 ```json
 [
     {
@@ -26,7 +33,7 @@ Pay close attention to error messages for line numbers.
 For "file", you may infer relative file paths from import statements.
 """
 
-JSON_SEARCH_PP = """
+JSON_SEARCH_PARENT_ONLY = """
 ```json
 [
     {
@@ -51,7 +58,7 @@ If the object is not part of a Class, leave "parent" as null.
 For "file", you may infer relative file paths from import statements.
 """
 
-JSON_SEARCH_LP = """
+JSON_SEARCH_LINE_AND_PARENT = """
 ```json
 [
     {

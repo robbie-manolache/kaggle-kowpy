@@ -39,7 +39,10 @@ class CodeSearchMatcher:
     """Matches code objects from JSON search criteria against analyzed code"""
 
     def __init__(
-        self, json_text: str, granularity: Granularity = Granularity.METHOD
+        self,
+        json_text: str,
+        search_mode: SearchMode,
+        granularity: Granularity = Granularity.METHOD,
     ):
         """
         Initialize with JSON text containing files and objects to search for
@@ -56,9 +59,17 @@ class CodeSearchMatcher:
         search_data = json.loads(json_text)
         # Add target_id to each search target
         self.search_targets = []
+        self.search_mode = search_mode
+        
         for i, target in enumerate(
             search_data if isinstance(search_data, list) else []
         ):
+            # Initialize optional fields based on search mode
+            if search_mode == SearchMode.LINE_ONLY:
+                target.setdefault("parent", None)
+            elif search_mode == SearchMode.PARENT_ONLY:
+                target.setdefault("line", None)
+            
             target["target_id"] = i
             self.search_targets.append(target)
 
@@ -235,10 +246,19 @@ class CodeSearchMatcher:
             self.ranked_matches_df = pd.DataFrame()
             return self.ranked_matches_df
 
-        # Sort by target_id, path_match_score, parent_match, then line_match
+        # Determine sort columns based on search mode
+        sort_cols = ["target_id", "path_match_score"]
+        if self.search_mode == SearchMode.LINE_ONLY:
+            sort_cols.append("line_match")
+        elif self.search_mode == SearchMode.PARENT_ONLY:
+            sort_cols.append("parent_match")
+        elif self.search_mode == SearchMode.LINE_AND_PARENT:
+            sort_cols.extend(["parent_match", "line_match"])
+
+        # Sort matches using appropriate columns
         sorted_df = self.matches_df.sort_values(
-            by=["target_id", "path_match_score", "parent_match", "line_match"],
-            ascending=[True, False, False, False],
+            by=sort_cols,
+            ascending=[True, False] + [False] * (len(sort_cols) - 2),
         )
 
         # Keep only the best match for each target_id
