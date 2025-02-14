@@ -111,7 +111,8 @@ def search_user_prompt_with_example(problem: str) -> str:
     Args:
         problem: Problem statement to analyze
     """
-    return """
+    return (
+        """
 I want you to inspect sample code and error messages to identify Python \
 objects that require modification to solve an issue. Your response must be in \
 JSON format with the following fields: "file", "object", "line", "parent".
@@ -178,7 +179,9 @@ I got an unexpected result: `"Hello Mars!"`
 ```
 
 Can you provide a response in the same format for the following user input:
-""" + f"{problem}"
+"""
+        + f"{problem}"
+    )
 
 
 class SearchPromptType(Enum):
