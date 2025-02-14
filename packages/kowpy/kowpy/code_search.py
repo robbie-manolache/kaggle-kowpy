@@ -288,6 +288,12 @@ class CodeSearchMatcher:
         # Keep only the best match for each target_id
         best_matches = sorted_df.groupby("target_id").first().reset_index()
 
+        # Remove matches with no meaningful match criteria
+        best_matches = best_matches[
+            ~((best_matches["path_match_score"] == 0) & 
+              ~(best_matches["line_match"] | best_matches["parent_match"]))
+        ]
+
         # For METHOD granularity, remove parent entries if with child matches
         if self.granularity == Granularity.METHOD and deduplicate:
             # Get all parent names and their files that have child entries
