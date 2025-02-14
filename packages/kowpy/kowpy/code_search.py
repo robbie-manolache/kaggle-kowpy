@@ -253,7 +253,7 @@ class CodeSearchMatcher:
         elif self.search_mode == SearchMode.PARENT_ONLY:
             sort_cols.append("parent_match")
         elif self.search_mode == SearchMode.LINE_AND_PARENT:
-            sort_cols.extend(["parent_match", "line_match"])
+            sort_cols.extend(["line_match", "parent_match"])
 
         # Sort matches using appropriate columns
         sorted_df = self.matches_df.sort_values(
