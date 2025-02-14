@@ -21,12 +21,16 @@ def _init_or_reuse_model(
     Returns:
         Initialized TextGenerator instance
     """
-    if isinstance(model_spec, str):
-        return TextGenerator(model_spec)
-    else:
+    if isinstance(model_spec, TextGenerator):
         if not hasattr(model_spec, "model") or model_spec.model is None:
             raise ValueError("TextGenerator is not properly initialized")
         return model_spec
+    elif existing_model is not None and isinstance(model_spec, str):
+        # Reuse existing model if it matches the requested model name
+        if existing_model.model == model_spec:
+            return existing_model
+    # Create new model instance
+    return TextGenerator(model_spec)
 
 
 def run_pipeline(
