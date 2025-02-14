@@ -64,14 +64,36 @@ class CodeSearchMatcher:
         for i, target in enumerate(
             search_data if isinstance(search_data, list) else []
         ):
-            # Initialize optional fields based on search mode
-            if search_mode == SearchMode.LINE_ONLY:
-                target.setdefault("parent", None)
-            elif search_mode == SearchMode.PARENT_ONLY:
-                target.setdefault("line", None)
-
-            target["target_id"] = i
-            self.search_targets.append(target)
+            # Handle methods field if present
+            methods = target.pop("methods", None)
+            
+            if methods is not None:
+                # If methods list is not empty, create entries for each method
+                if methods:
+                    line = target.get("line")
+                    for method in methods:
+                        method_target = {
+                            "file": target["file"],
+                            "object": method,
+                            "line": line,
+                            "parent": target["object"],
+                            "target_id": len(self.search_targets)
+                        }
+                        self.search_targets.append(method_target)
+                else:
+                    # Empty methods list, just add null parent
+                    target["parent"] = None
+                    target["target_id"] = len(self.search_targets)
+                    self.search_targets.append(target)
+            else:
+                # No methods field, handle traditional format
+                if search_mode == SearchMode.LINE_ONLY:
+                    target.setdefault("parent", None)
+                elif search_mode == SearchMode.PARENT_ONLY:
+                    target.setdefault("line", None)
+                
+                target["target_id"] = len(self.search_targets)
+                self.search_targets.append(target)
 
         self.matches_df: Optional[pd.DataFrame] = None
         self.ranked_matches_df: Optional[pd.DataFrame] = None
