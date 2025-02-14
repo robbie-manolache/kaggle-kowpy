@@ -8,10 +8,32 @@ from .prompt import FIXER_PROMPT, SEARCH_PROMPT, SearchPromptType
 from .model import TextGenerator
 
 
+def _init_or_reuse_model(
+    model_spec: Union[str, TextGenerator],
+    existing_model: TextGenerator | None = None
+) -> TextGenerator:
+    """Initialize a new model or reuse existing if compatible.
+    
+    Args:
+        model_spec: Model name or TextGenerator instance
+        existing_model: Optional existing TextGenerator to potentially reuse
+        
+    Returns:
+        Initialized TextGenerator instance
+    """
+    if isinstance(model_spec, str):
+        return TextGenerator(model_spec)
+    else:
+        if not hasattr(model_spec, "model") or model_spec.model is None:
+            raise ValueError("TextGenerator is not properly initialized")
+        return model_spec
+
+
 def run_pipeline(
     repo_path: str,
     problem: str,
-    model: Union[str, TextGenerator],
+    search_model: Union[str, TextGenerator],
+    fix_model: Union[str, TextGenerator] | None = None,
     search_kwargs: Dict[str, Any] | None = None,
     verbose: bool = False,
     print_list: list[str] | None = None,
@@ -49,24 +71,17 @@ def run_pipeline(
     search_kwargs = search_kwargs or {"prompt_type": SearchPromptType.DT}
     search_mode = search_kwargs.get("search_mode", SearchMode.LINE_AND_PARENT)
 
-    # Initialize text generator with model or validate existing one
+    # Initialize search model
     search_msg = SEARCH_PROMPT.generate_messages(
         user_kwargs=base_kwargs | search_kwargs,
         verbose=verbose,
     )
-
-    if isinstance(model, str):
-        txtgen = TextGenerator(model)
-    else:
-        txtgen = model
-        # Validate the TextGenerator instance
-        if not hasattr(txtgen, "model") or txtgen.model is None:
-            raise ValueError("TextGenerator is not properly initialized")
-
-    txtgen.set_messages(search_msg)
-    txtgen.prepare_input()
-    txtgen.generate(max_new_tokens=512)
-    search_output = txtgen.get_response()
+    
+    search_txtgen = _init_or_reuse_model(search_model)
+    search_txtgen.set_messages(search_msg)
+    search_txtgen.prepare_input()
+    search_txtgen.generate(max_new_tokens=512)
+    search_output = search_txtgen.get_response()
     if verbose or ("search_output" in print_list):
         print(">>> SEARCH TASK OUTPUT START <<<\n")
         print(search_output)
@@ -90,24 +105,28 @@ def run_pipeline(
         user_kwargs=base_kwargs | {"snippets": snips}, verbose=verbose
     )
 
-    txtgen.set_messages(fixer_msg)
-    txtgen.prepare_input()
-    if txtgen.prompt_tokens_over_limit:
+    # Initialize or reuse model for fixing
+    fix_model = fix_model or search_model  # Use search model if no fix model specified
+    fix_txtgen = _init_or_reuse_model(fix_model, search_txtgen if fix_model == search_model else None)
+    
+    fix_txtgen.set_messages(fixer_msg)
+    fix_txtgen.prepare_input()
+    if fix_txtgen.prompt_tokens_over_limit:
         # TODO: revisit matching df and see if we can identify children
         # if it's a larger parent causing the large token size
         # e.g. a monolithic class object
         print("!!! Skipping issue due to large prompt size...")
         return None
 
-    txtgen.generate()
-    fixer_output = txtgen.get_response()
+    fix_txtgen.generate()
+    fixer_output = fix_txtgen.get_response()
     if verbose:
         print(">>> FIXER TASK OUTPUT START <<<\n")
         print(fixer_output)
         print("\n>>> FIXER TASK OUTPUT END <<<")
 
     # Check if the fix was successful
-    status = txtgen.parse_status(fixer_output)
+    status = fix_txtgen.parse_status(fixer_output)
     if not status == txtgen.ResponseStatus.SUCCESS:
         print(f"!!! Skipping issue due to {status.name} status...")
         return None
