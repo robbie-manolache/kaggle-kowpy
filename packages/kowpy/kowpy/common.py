@@ -113,6 +113,7 @@ JSON_SEARCH_LINE_METHODS = """
 ```
 """
 
+
 class SearchMode(Enum):
     """Controls which fields are used for code search matching"""
 
