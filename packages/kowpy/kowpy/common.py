@@ -82,6 +82,36 @@ If the object is not part of a Class, leave "parent" as null.
 For "file", you may infer relative file paths from import statements.
 """
 
+JSON_SEARCH_LINE_METHODS = """
+```json
+[
+    {
+        "file": "path/to/file.py", 
+        "object": "object_name", 
+        "line": 250, 
+        "methods": []
+    },
+    {
+        "file": "path/to/file.py", 
+        "object": "class_name", 
+        "line": null, 
+        "methods": ["run", "_test"]
+    },
+    {
+        "file": "path/to/file.py", 
+        "object": "function_name", 
+        "line": null, 
+        "methods": []
+    },
+    {
+        "file": "path/to/file.py", 
+        "object": "object_name", 
+        "line": 1672, 
+        "methods": []
+    }
+]
+```
+"""
 
 class SearchMode(Enum):
     """Controls which fields are used for code search matching"""

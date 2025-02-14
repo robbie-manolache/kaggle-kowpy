@@ -46,7 +46,7 @@ def run_pipeline(
     base_kwargs = {"problem": problem}
 
     # Default search kwargs if None
-    search_kwargs = search_kwargs or {"prompt_type": SearchPromptType.EG}
+    search_kwargs = search_kwargs or {"prompt_type": SearchPromptType.DT}
     search_mode = search_kwargs.get("search_mode", SearchMode.LINE_AND_PARENT)
 
     # Initialize text generator with model or validate existing one

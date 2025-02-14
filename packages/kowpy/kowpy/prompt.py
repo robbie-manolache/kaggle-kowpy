@@ -6,6 +6,7 @@ from .common import (
     JSON_SEARCH_LINE_ONLY,
     JSON_SEARCH_PARENT_ONLY,
     JSON_SEARCH_LINE_AND_PARENT,
+    JSON_SEARCH_LINE_METHODS,
     CodeSnippet,
 )
 import numpy as np
@@ -179,14 +180,52 @@ I got an unexpected result: `"Hello Mars!"`
 ```
 
 Can you provide a response in the same format for the following user input:
+
 """
-        + f"{problem}"
+        + problem
     )
+
+
+def search_user_prompt_detailed(problem: str) -> str:
+    """
+    Generate prompt to search for objects/files in a repo
+
+    Args:
+        problem: Problem statement to analyze
+    """
+    return f"""
+I want you to inspect GitHub issues and identify Python objects from \
+code samples and/or error messages provided by users. For each object \
+you should identify the following fields:
+
+- "object": the name of the Python object. In error messages, this is \
+typically preceded by `in`
+- "file": path to the file, usually visible in error messages. For code \
+samples, the path might need to be inferred from import statements
+- "line": line number where the error was raised, usually only visible \
+in error messages. Return null if not available
+- "methods": if the object is a class, list any relevant methods else \
+return an empty list.
+
+Your response output must follow the JSON format shown in this example:
+
+{JSON_SEARCH_LINE_METHODS}
+
+All of the values above are made up. You must identify values from \
+within the GitHub issue below only.
+
+Below is the GitHub issue you must focus on, carefully inspecting the \
+sample code and error messages and returning a response in the JSON \
+format shown above:
+
+{problem}
+"""
 
 
 class SearchPromptType(Enum):
     V0 = auto()
     EG = auto()
+    DT = auto()
 
 
 def search_user_prompt(
@@ -205,6 +244,8 @@ def search_user_prompt(
         return search_user_prompt_v0(problem, kwargs.get("search_mode"))
     elif prompt_type == SearchPromptType.EG:
         return search_user_prompt_with_example(problem)
+    elif prompt_type == SearchPromptType.DT:
+        return search_user_prompt_detailed(problem)
     else:
         raise ValueError(f"Unexpected prompt type {prompt_type}")
 
