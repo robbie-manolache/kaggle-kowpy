@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import List, Dict, Union, Callable
 from .common import (
     SearchMode,
@@ -71,7 +72,7 @@ class PromptGenerator:
         ]
 
 
-def search_user_prompt(problem: str, search_mode: SearchMode) -> str:
+def search_user_prompt_v0(problem: str, search_mode: SearchMode) -> str:
     """
     Generate prompt to search for objects/files in a repo
 
@@ -101,6 +102,108 @@ Make sure to consider all relevant file paths and objects, \
 especially those shown in error messages related to the repo.
 """
     )
+
+
+def search_user_prompt_with_example(problem: str) -> str:
+    """
+    Generate prompt to search for objects/files in a repo
+
+    Args:
+        problem: Problem statement to analyze
+    """
+    return """
+I want you to inspect sample code and error messages to identify Python \
+objects that require modification to solve an issue. Your response must be in \
+JSON format with the following fields: "file", "object", "line", "parent".
+Below are some examples:
+
+### EXAMPLE 1
+
+#### USER INPUT
+I tried running the following code:
+```
+from module import foo
+
+Test = foo()
+foo.some_method(x=42)
+```
+This raised the following error:
+```
+Traceback (most recent call last):
+  File "/path/to/main.py", line 4, in <module>
+    Test.some_method()
+  File "/path/to/class_file.py", line 42, in some_method
+    raise ValueError("An error occurred")
+```
+
+#### YOUR RESPONSE
+```json
+[
+    {
+        "file": "path/to/class_file.py",
+        "object": "foo",
+        "line": null,
+        "parent": null
+    },
+    {
+        "file": "path/to/class_file.py",
+        "object": "some_method",
+        "line": 42,
+        "parent": "foo"
+    },
+]
+```
+
+### EXAMPLE 2
+
+#### USER INPUT
+I tried running the following code:
+```
+from package.module import hello_world
+
+hello_world()
+```
+I got an unexpected result: `"Hello Mars!"`
+
+#### YOUR RESPONSE
+```json
+[
+    {
+        "file": "package/module.py",
+        "object": "hello_world",
+        "line": null,
+        "parent": null
+    },
+]
+```
+
+Can you provide a response in the same format for the following user input:
+""" + f"{problem}"
+
+
+class SearchPromptType(Enum):
+    V0 = auto()
+    EG = auto()
+
+
+def search_user_prompt(
+    problem: str, prompt_type: SearchPromptType, **kwargs
+) -> str:
+    """
+    Generate prompt to search for objects/files in a repo
+
+    Args:
+        problem: Problem statement to analyze
+        prompt_type: SearchPromptType to determine which prompt generator
+            function gets called
+        kwargs: Kwargs to pass to the prompt generator function
+    """
+    if prompt_type == SearchPromptType.V0:
+        return search_user_prompt_v0(problem, kwargs.get("search_mode"))
+    elif prompt_type == SearchPromptType.EG:
+        return search_user_prompt_with_example(problem)
+    else:
+        raise ValueError(f"Unexpected prompt type {prompt_type}")
 
 
 SEARCH_PROMPT = PromptGenerator(

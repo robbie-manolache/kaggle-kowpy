@@ -1,6 +1,6 @@
 """KowPy - A Python package for code analysis and manipulation"""
 
-__version__ = "0.9.3"
+__version__ = "0.9.4"
 
 from kowpy.repo_map import (
     map_directory,
@@ -18,6 +18,7 @@ from kowpy.prompt import (
     FIXER_PROMPT,
     SEARCH_PROMPT,
     PromptGenerator,
+    SearchPromptType,
 )
 from kowpy.model import TextGenerator
 from kowpy.pipeline import run_pipeline
@@ -37,6 +38,7 @@ __all__ = [
     "SEARCH_PROMPT",
     "SearchMode",
     "PromptGenerator",
+    "SearchPromptType",
     "TextGenerator",
     "run_pipeline",
 ]

@@ -1,10 +1,10 @@
-from typing import Union
+from typing import Any, Dict, Union
 
 from .code_analyzer import analyze_codebase
 from .code_builder import CodeBuilder
 from .code_search import Granularity, CodeSearchMatcher
 from .common import SearchMode
-from .prompt import FIXER_PROMPT, SEARCH_PROMPT
+from .prompt import FIXER_PROMPT, SEARCH_PROMPT, SearchPromptType
 from .model import TextGenerator
 
 
@@ -12,7 +12,7 @@ def run_pipeline(
     repo_path: str,
     problem: str,
     model: Union[str, TextGenerator],
-    search_mode: SearchMode = SearchMode.LINE_ONLY,
+    search_kwargs: Dict[str, Any] | None = None,
     verbose: bool = False,
     print_list: list[str] | None = None,
 ) -> str | None:
@@ -31,7 +31,7 @@ def run_pipeline(
         repo_path: Path to the repository to analyze
         problem: Description of the problem to fix
         model: Either a model name string or an initialized TextGenerator
-        search_mode: Controls which JSON template to use for searching
+        search_kwargs: Controls how the search prompt is compiled
         verbose: If True, log the LLM responses for debugging
         print_list: Overrides verbose=False for specified items
 
@@ -45,9 +45,13 @@ def run_pipeline(
     # Prepare common kwargs for prompts
     base_kwargs = {"problem": problem}
 
+    # Default search kwargs if None
+    search_kwargs = search_kwargs or {"prompt_type": SearchPromptType.EG}
+    search_mode = search_kwargs.get("search_mode", SearchMode.LINE_AND_PARENT)
+
     # Initialize text generator with model or validate existing one
     search_msg = SEARCH_PROMPT.generate_messages(
-        user_kwargs=base_kwargs | {"search_mode": search_mode},
+        user_kwargs=base_kwargs | search_kwargs,
         verbose=verbose,
     )
 
