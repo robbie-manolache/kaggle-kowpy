@@ -235,9 +235,13 @@ class CodeSearchMatcher:
         self.matches_df = consolidated
         return consolidated
 
-    def rank_matches(self) -> pd.DataFrame:
+    def rank_matches(self, deduplicate: bool = True) -> pd.DataFrame:
         """
         Rank matches by path_match_score and line_match to find best matches.
+
+        Args:
+            deduplicate: If True, removes parent entries when child methods exist
+                        in the same file (only applies to METHOD granularity)
 
         Returns:
             DataFrame containing only the best match for each search target
@@ -265,15 +269,19 @@ class CodeSearchMatcher:
         best_matches = sorted_df.groupby("target_id").first().reset_index()
 
         # For METHOD granularity, remove parent entries if we have child matches
-        if self.granularity == Granularity.METHOD:
-            # Get all parent names that have child entries
-            parents_with_children = best_matches[best_matches["parent"].notna()]["parent"].unique()
+        if self.granularity == Granularity.METHOD and deduplicate:
+            # Get all parent names and their files that have child entries
+            parents_with_children = best_matches[best_matches["parent"].notna()][["parent", "path"]]
             
-            # Remove parent entries that have children
+            # Remove parent entries that have children in the same file
             best_matches = best_matches[
                 ~(
                     (best_matches["parent"].isna()) &  # Is a parent entry
-                    (best_matches["name"].isin(parents_with_children))  # Has children
+                    best_matches.apply(  # Has children in same file
+                        lambda x: ((parents_with_children["parent"] == x["name"]) & 
+                                 (parents_with_children["path"] == x["path"])).any(),
+                        axis=1
+                    )
                 )
             ]
 
