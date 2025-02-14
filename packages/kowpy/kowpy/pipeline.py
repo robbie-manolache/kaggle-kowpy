@@ -127,7 +127,7 @@ def run_pipeline(
 
     # Check if the fix was successful
     status = fix_txtgen.parse_status(fixer_output)
-    if not status == txtgen.ResponseStatus.SUCCESS:
+    if not status == fix_txtgen.ResponseStatus.SUCCESS:
         print(f"!!! Skipping issue due to {status.name} status...")
         return None
 
