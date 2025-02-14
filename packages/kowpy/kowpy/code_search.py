@@ -262,9 +262,22 @@ class CodeSearchMatcher:
         )
 
         # Keep only the best match for each target_id
-        self.ranked_matches_df = (
-            sorted_df.groupby("target_id").first().reset_index()
-        )
+        best_matches = sorted_df.groupby("target_id").first().reset_index()
+
+        # For METHOD granularity, remove parent entries if we have child matches
+        if self.granularity == Granularity.METHOD:
+            # Get all parent names that have child entries
+            parents_with_children = best_matches[best_matches["parent"].notna()]["parent"].unique()
+            
+            # Remove parent entries that have children
+            best_matches = best_matches[
+                ~(
+                    (best_matches["parent"].isna()) &  # Is a parent entry
+                    (best_matches["name"].isin(parents_with_children))  # Has children
+                )
+            ]
+
+        self.ranked_matches_df = best_matches
         return self.ranked_matches_df
 
     def get_ranked_snippets(self) -> List[CodeSnippet]:
