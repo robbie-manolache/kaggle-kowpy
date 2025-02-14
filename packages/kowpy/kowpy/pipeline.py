@@ -10,14 +10,14 @@ from .model import TextGenerator
 
 def _init_or_reuse_model(
     model_spec: Union[str, TextGenerator],
-    existing_model: TextGenerator | None = None
+    existing_model: TextGenerator | None = None,
 ) -> TextGenerator:
     """Initialize a new model or reuse existing if compatible.
-    
+
     Args:
         model_spec: Model name or TextGenerator instance
         existing_model: Optional existing TextGenerator to potentially reuse
-        
+
     Returns:
         Initialized TextGenerator instance
     """
@@ -80,7 +80,7 @@ def run_pipeline(
         user_kwargs=base_kwargs | search_kwargs,
         verbose=verbose,
     )
-    
+
     search_txtgen = _init_or_reuse_model(search_model)
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
@@ -110,9 +110,11 @@ def run_pipeline(
     )
 
     # Initialize or reuse model for fixing
-    fix_model = fix_model or search_model  # Use search model if no fix model specified
-    fix_txtgen = _init_or_reuse_model(fix_model, search_txtgen if fix_model == search_model else None)
-    
+    fix_model = fix_model or search_model  # Use search model if no fix model
+    fix_txtgen = _init_or_reuse_model(
+        fix_model, search_txtgen if fix_model == search_model else None
+    )
+
     fix_txtgen.set_messages(fixer_msg)
     fix_txtgen.prepare_input()
     if fix_txtgen.prompt_tokens_over_limit:

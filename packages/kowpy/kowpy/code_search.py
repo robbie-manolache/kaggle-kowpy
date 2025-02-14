@@ -1,7 +1,9 @@
 import json
+import operator
 import re
 from dataclasses import dataclass
 from enum import Enum
+from functools import reduce
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 import pandas as pd
@@ -289,10 +291,12 @@ class CodeSearchMatcher:
         best_matches = sorted_df.groupby("target_id").first().reset_index()
 
         # Remove matches with no meaningful match criteria
-        best_matches = best_matches[
-            ~((best_matches["path_match_score"] == 0) & 
-              ~(best_matches["line_match"] | best_matches["parent_match"]))
+        valid_match = [
+            best_matches["path_match_score"] > 0,
+            best_matches["line_match"] == True,
+            best_matches["parent_match"] == True,
         ]
+        best_matches = best_matches[reduce(operator.or_, valid_match)]
 
         # For METHOD granularity, remove parent entries if with child matches
         if self.granularity == Granularity.METHOD and deduplicate:
