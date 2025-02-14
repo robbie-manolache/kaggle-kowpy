@@ -86,27 +86,27 @@ JSON_SEARCH_LINE_METHODS = """
 ```json
 [
     {
-        "file": "path/to/file.py", 
-        "object": "object_name", 
-        "line": 250, 
+        "file": "path/to/file.py",
+        "object": "object_name",
+        "line": 250,
         "methods": []
     },
     {
-        "file": "path/to/file.py", 
-        "object": "class_name", 
-        "line": null, 
+        "file": "path/to/file.py",
+        "object": "class_name",
+        "line": null,
         "methods": ["run", "_test"]
     },
     {
-        "file": "path/to/file.py", 
-        "object": "function_name", 
-        "line": null, 
+        "file": "path/to/file.py",
+        "object": "function_name",
+        "line": null,
         "methods": []
     },
     {
-        "file": "path/to/file.py", 
-        "object": "object_name", 
-        "line": 1672, 
+        "file": "path/to/file.py",
+        "object": "object_name",
+        "line": 1672,
         "methods": []
     }
 ]

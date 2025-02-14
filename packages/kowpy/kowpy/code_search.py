@@ -61,12 +61,10 @@ class CodeSearchMatcher:
         self.search_targets = []
         self.search_mode = search_mode
 
-        for i, target in enumerate(
-            search_data if isinstance(search_data, list) else []
-        ):
+        for target in search_data if isinstance(search_data, list) else []:
             # Handle methods field if present
             methods = target.pop("methods", None)
-            
+
             if methods is not None:
                 # If methods list is not empty, create entries for each method
                 if methods:
@@ -77,7 +75,7 @@ class CodeSearchMatcher:
                             "object": method,
                             "line": line,
                             "parent": target["object"],
-                            "target_id": len(self.search_targets)
+                            "target_id": len(self.search_targets),
                         }
                         self.search_targets.append(method_target)
                 else:
@@ -91,7 +89,7 @@ class CodeSearchMatcher:
                     target.setdefault("parent", None)
                 elif search_mode == SearchMode.PARENT_ONLY:
                     target.setdefault("line", None)
-                
+
                 target["target_id"] = len(self.search_targets)
                 self.search_targets.append(target)
 

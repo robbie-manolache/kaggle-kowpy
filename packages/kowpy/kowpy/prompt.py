@@ -194,16 +194,16 @@ def search_user_prompt_detailed(problem: str) -> str:
         problem: Problem statement to analyze
     """
     return f"""
-I want you to inspect GitHub issues and identify Python objects from \
-code samples and/or error messages provided by users. For each object \
+I want you to inspect a GitHub issue and identify Python objects from \
+code samples and/or error tracebacks provided by users. For each object \
 you should identify the following fields:
 
-- "object": the name of the Python object. In error messages, this is \
+- "object": the name of the Python object. In error tracebacks, this is \
 typically preceded by `in`
-- "file": path to the file, usually visible in error messages. For code \
+- "file": path to the file, usually visible in error tracebacks. For code \
 samples, the path might need to be inferred from import statements
-- "line": line number where the error was raised, usually only visible \
-in error messages. Return null if not available
+- "line": line number, usually only visible in error traceback messages. \
+Return null if not available
 - "methods": if the object is a class, list any relevant methods else \
 return an empty list.
 
@@ -215,8 +215,8 @@ All of the values above are made up. You must identify values from \
 within the GitHub issue below only.
 
 Below is the GitHub issue you must focus on, carefully inspecting the \
-sample code and error messages and returning a response in the JSON \
-format shown above:
+sample code and all error traceback messages, returning a response in \
+the JSON format shown above:
 
 {problem}
 """
