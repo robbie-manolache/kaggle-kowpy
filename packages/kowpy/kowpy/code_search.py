@@ -257,13 +257,19 @@ class CodeSearchMatcher:
         self.matches_df = consolidated
         return consolidated
 
-    def rank_matches(self, deduplicate: bool = True) -> pd.DataFrame:
+    def rank_matches(
+        self, 
+        deduplicate: bool = True,
+        drop_zero_score: bool = False,
+    ) -> pd.DataFrame:
         """
         Rank matches by path_match_score and line_match to find best matches.
 
         Args:
             deduplicate: If True, removes parent entries when child methods
                 exist in the same file (only applies to METHOD granularity)
+            drop_zero_score: If True, removes matches where path_match_score,
+                line_match and parent_match are all 0.
 
         Returns:
             DataFrame containing only the best match for each search target
@@ -291,12 +297,13 @@ class CodeSearchMatcher:
         best_matches = sorted_df.groupby("target_id").first().reset_index()
 
         # Remove matches with no meaningful match criteria
-        valid_match = [
-            best_matches["path_match_score"] > 0,
-            best_matches["line_match"] == True,
-            best_matches["parent_match"] == True,
-        ]
-        best_matches = best_matches[reduce(operator.or_, valid_match)]
+        if drop_zero_score:
+            valid_match = [
+                best_matches["path_match_score"] > 0,
+                best_matches["line_match"] == True,
+                best_matches["parent_match"] == True,
+            ]
+            best_matches = best_matches[reduce(operator.or_, valid_match)]
 
         # For METHOD granularity, remove parent entries if with child matches
         if self.granularity == Granularity.METHOD and deduplicate:
@@ -318,6 +325,9 @@ class CodeSearchMatcher:
                     )
                 )
             ]
+        
+        # keep unique node ID only
+        best_matches = best_matches.drop_duplicates(subset=["node_id"])
 
         self.ranked_matches_df = best_matches
         return self.ranked_matches_df
