@@ -1,4 +1,5 @@
 from typing import Any, Dict, Union
+import time
 
 from .code_analyzer import analyze_codebase
 from .code_builder import CodeBuilder
@@ -41,6 +42,7 @@ def run_pipeline(
     search_kwargs: Dict[str, Any] | None = None,
     verbose: bool = False,
     print_list: list[str] | None = None,
+    timeout_minutes: float = 30.0,
 ) -> str | None:
     """
     Run the complete analysis and modification pipeline on a repository.
@@ -67,6 +69,10 @@ def run_pipeline(
 
     # print list for verbose overrides
     print_list = print_list or []
+    
+    # Start timing
+    start_time = time.time()
+    timeout_seconds = timeout_minutes * 60
 
     # Prepare common kwargs for prompts
     base_kwargs = {"problem": problem}
@@ -90,6 +96,15 @@ def run_pipeline(
         print(">>> SEARCH TASK OUTPUT START <<<\n")
         print(search_output)
         print("\n>>> SEARCH TASK OUTPUT END <<<")
+
+    # Check time after search
+    elapsed_time = time.time() - start_time
+    remaining_time = timeout_seconds - elapsed_time
+    if remaining_time <= 0:
+        print(f"!!! Timeout after {elapsed_time:.1f}s (limit: {timeout_seconds:.1f}s)")
+        return None
+    if verbose:
+        print(f"Time elapsed: {elapsed_time:.1f}s, remaining: {remaining_time:.1f}s")
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
