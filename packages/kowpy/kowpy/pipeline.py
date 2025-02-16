@@ -97,15 +97,6 @@ def run_pipeline(
         print(search_output)
         print("\n>>> SEARCH TASK OUTPUT END <<<")
 
-    # Check time after search
-    elapsed_time = time.time() - start_time
-    remaining_time = timeout_seconds - elapsed_time
-    if remaining_time <= 0:
-        print(f"!!! Timeout after {elapsed_time:.1f}s (limit: {timeout_seconds:.1f}s)")
-        return None
-    if verbose:
-        print(f"Time elapsed: {elapsed_time:.1f}s, remaining: {remaining_time:.1f}s")
-
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
     csm = CodeSearchMatcher(search_output, search_mode, Granularity.METHOD)
@@ -130,7 +121,18 @@ def run_pipeline(
         fix_model, search_txtgen if fix_model == search_model else None
     )
 
+    # Check time after search
+    search_time = time.time() - start_time
+    remaining_time = timeout_seconds - search_time
+    if verbose or ("time_check" in print_list):
+        print(f"Time remaining: {remaining_time:.1f}s")
+        print(
+            f"Processed {search_txtgen.input_length} tokens
+            in {search_time} seconds"
+        )
+
     fix_txtgen.set_messages(fixer_msg)
+    fix_txtgen.set_max_tokens(remaining_time * 3)
     fix_txtgen.prepare_input()
     if fix_txtgen.prompt_tokens_over_limit:
         # TODO: revisit matching df and see if we can identify children
@@ -159,5 +161,15 @@ def run_pipeline(
     mods = ""
     for path in paths:
         mods += cbd.get_modifications_diff(file_path=path, root_dir=repo_path)
+
+    # Check time after fix
+    fix_time = time.time() - start_time
+    remaining_time = timeout_seconds - fix_time
+    if verbose or ("time_check" in print_list):
+        print(f"Time remaining: {remaining_time:.1f}s")
+        print(
+            f"Processed {fix_txtgen.input_length} tokens
+            in {fix_time - search_time} seconds"
+        )
 
     return mods
