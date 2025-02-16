@@ -258,7 +258,7 @@ class CodeSearchMatcher:
         return consolidated
 
     def rank_matches(
-        self, 
+        self,
         deduplicate: bool = True,
         drop_zero_score: bool = False,
     ) -> pd.DataFrame:
@@ -300,8 +300,8 @@ class CodeSearchMatcher:
         if drop_zero_score:
             valid_match = [
                 best_matches["path_match_score"] > 0,
-                best_matches["line_match"] == True,
-                best_matches["parent_match"] == True,
+                best_matches["line_match"],
+                best_matches["parent_match"],
             ]
             best_matches = best_matches[reduce(operator.or_, valid_match)]
 
@@ -325,7 +325,7 @@ class CodeSearchMatcher:
                     )
                 )
             ]
-        
+
         # keep unique node ID only
         best_matches = best_matches.drop_duplicates(subset=["node_id"])
 

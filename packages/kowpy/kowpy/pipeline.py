@@ -40,6 +40,7 @@ def run_pipeline(
     search_model: Union[str, TextGenerator],
     fix_model: Union[str, TextGenerator] | None = None,
     search_kwargs: Dict[str, Any] | None = None,
+    tokens_per_second: int = 3,
     verbose: bool = False,
     print_list: list[str] | None = None,
     timeout_minutes: float = 30.0,
@@ -58,10 +59,15 @@ def run_pipeline(
     Args:
         repo_path: Path to the repository to analyze
         problem: Description of the problem to fix
-        model: Either a model name string or an initialized TextGenerator
+        search_model: Either a model name string or a TextGenerator object
+            for the search task.
+        fix_model: Either a model name string or a TextGenerator object for
+            the fix task. If None, search_model is reused.
         search_kwargs: Controls how the search prompt is compiled
+        tokens_per_second: Tokens that model is expected to process per second
         verbose: If True, log the LLM responses for debugging
         print_list: Overrides verbose=False for specified items
+        timeout_minutes: Maximum number of minutes for pipeline to run
 
     Returns:
         String containing unified diff of proposed changes, or None if it fails
@@ -69,7 +75,7 @@ def run_pipeline(
 
     # print list for verbose overrides
     print_list = print_list or []
-    
+
     # Start timing
     start_time = time.time()
     timeout_seconds = timeout_minutes * 60
@@ -127,12 +133,12 @@ def run_pipeline(
     if verbose or ("time_check" in print_list):
         print(f"Time remaining: {remaining_time:.1f}s")
         print(
-            f"Processed {search_txtgen.input_length} tokens
-            in {search_time} seconds"
+            f"Processed {search_txtgen.input_length} tokens "
+            + f"in {search_time} seconds"
         )
 
     fix_txtgen.set_messages(fixer_msg)
-    fix_txtgen.set_max_tokens(remaining_time * 3)
+    fix_txtgen.set_max_tokens(int(remaining_time * tokens_per_second))
     fix_txtgen.prepare_input()
     if fix_txtgen.prompt_tokens_over_limit:
         # TODO: revisit matching df and see if we can identify children
@@ -168,8 +174,8 @@ def run_pipeline(
     if verbose or ("time_check" in print_list):
         print(f"Time remaining: {remaining_time:.1f}s")
         print(
-            f"Processed {fix_txtgen.input_length} tokens
-            in {fix_time - search_time} seconds"
+            f"Processed {fix_txtgen.input_length} tokens "
+            + f"in {fix_time - search_time} seconds"
         )
 
     return mods
