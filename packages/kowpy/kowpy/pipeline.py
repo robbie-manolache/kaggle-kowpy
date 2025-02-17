@@ -141,13 +141,12 @@ def run_pipeline(
     max_tokens = int(remaining_time * tokens_per_second)
     fix_txtgen.set_max_tokens(min(max_tokens, MAX_TOKENS))
 
-    def _fix_prompt_gen(min_score: float) -> None:
+    def _fix_prompt_gen(min_score: float) -> tuple[list, bool] | None:
         snips = csm.get_ranked_snippets(min_score)
 
         # Stop pipeline if not relevant snippets found
         if len(snips) == 0:
-            # TODO: we can maybe have 1 retry but might cause timeout issues
-            print("!!! No relevant code snippets found...")
+            print(f"!!! No relevant code snippets found at min_score={min_score}")
             return None
 
         # Prepare code builder with matched snippets
@@ -163,10 +162,22 @@ def run_pipeline(
 
         return snips, fix_txtgen.prompt_tokens_over_limit
     
+    valid_snippets = None
     for min_score in [0, 1, 2, 3]:
-        snips, invalid = _fix_prompt_gen(min_score)
-        if not invalid:
+        result = _fix_prompt_gen(min_score)
+        if result is None:
+            continue
+            
+        snips, tokens_over_limit = result
+        if not tokens_over_limit:
+            valid_snippets = snips
             break
+    
+    if valid_snippets is None:
+        print("!!! Could not find snippets that fit within token limit")
+        return None
+    
+    snips = valid_snippets
 
     # if fix_txtgen.prompt_tokens_over_limit:
     # TODO: revisit matching df and see if we can identify children
