@@ -40,6 +40,8 @@ def run_pipeline(
     search_model: Union[str, TextGenerator],
     fix_model: Union[str, TextGenerator] | None = None,
     search_kwargs: Dict[str, Any] | None = None,
+    search_gen_kwargs: Dict[str, Any] | None = None,
+    fix_gen_kwargs: Dict[str, Any] | None = None,
     tokens_per_second: int = 3,
     verbose: bool = False,
     print_list: list[str] | None = None,
@@ -64,6 +66,8 @@ def run_pipeline(
         fix_model: Either a model name string or a TextGenerator object for
             the fix task. If None, search_model is reused.
         search_kwargs: Controls how the search prompt is compiled
+        search_gen_kwargs: Optional kwargs for search model generation
+        fix_gen_kwargs: Optional kwargs for fix model generation
         tokens_per_second: Tokens that model is expected to process per second
         verbose: If True, log the LLM responses for debugging
         print_list: Overrides verbose=False for specified items
@@ -96,7 +100,7 @@ def run_pipeline(
     search_txtgen = _init_or_reuse_model(search_model)
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
-    search_txtgen.generate(max_new_tokens=512)
+    search_txtgen.generate(**(search_gen_kwargs or {}))
     search_output = search_txtgen.get_response()
     if verbose or ("search_output" in print_list):
         print(">>> SEARCH TASK OUTPUT START <<<\n")
@@ -147,7 +151,7 @@ def run_pipeline(
         print("!!! Skipping issue due to large prompt size...")
         return None
 
-    fix_txtgen.generate()
+    fix_txtgen.generate(**(fix_gen_kwargs or {}))
     fixer_output = fix_txtgen.get_response()
     if verbose:
         print(">>> FIXER TASK OUTPUT START <<<\n")

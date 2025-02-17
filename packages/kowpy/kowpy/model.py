@@ -95,12 +95,13 @@ class TextGenerator:
             )
             self.prompt_tokens_over_limit = True
 
-    def generate(self, max_new_tokens: int | None = None) -> None:
+    def generate(self, **kwargs) -> None:
         """
         Generate text based on the prepared input.
 
         Args:
-            max_new_tokens (int): Maximum number of tokens to generate
+            **kwargs: Keyword arguments to pass to model.generate().
+                     Defaults to max_new_tokens=self.max_tokens if not provided.
         """
         if self.model_inputs is None:
             raise ValueError("Input not prepared. Call prepare_input first.")
@@ -111,9 +112,13 @@ class TextGenerator:
                 f"allowed tokens ({self.max_tokens})"
             )
 
+        # Set default max_new_tokens if not in kwargs
+        if "max_new_tokens" not in kwargs:
+            kwargs["max_new_tokens"] = self.max_tokens
+
         generated_ids = self.model.generate(
             **self.model_inputs,
-            max_new_tokens=max_new_tokens or self.max_tokens,
+            **kwargs
         )
         self.generated_ids = [
             output_ids[len(input_ids) :]
