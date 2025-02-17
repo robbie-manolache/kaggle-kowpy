@@ -65,34 +65,33 @@ class CodeSearchMatcher:
 
         for target in search_data if isinstance(search_data, list) else []:
             # Handle methods field if present
-            methods = target.pop("methods", None)
+            methods = target.pop("methods", [])
 
-            if methods is not None:
-                # If methods list is not empty, create entries for each method
-                if methods:
-                    line = target.get("line")
-                    for method in methods:
-                        method_target = {
-                            "file": target["file"],
-                            "object": method,
-                            "line": line,
-                            "parent": target["object"],
-                            "target_id": len(self.search_targets),
-                        }
-                        self.search_targets.append(method_target)
+            # If methods list is not empty, create entries for each method
+            if methods:
+                line = target.get("line")
+                for method in methods:
+                    method_target = {
+                        "file": target["file"],
+                        "object": method,
+                        "line": line,
+                        "parent": target["object"],
+                        "target_id": len(self.search_targets),
+                    }
+                    self.search_targets.append(method_target)
+            else:
+                # Empty methods list or no methods, handle object split
+                if "." in target["object"]:
+                    # Split nested object names (e.g. "class.method")
+                    parts = target["object"].split(".")
+                    target["object"] = parts[-1]  # Last part is the method
+                    target["parent"] = parts[-2]  # Immediate parent only
                 else:
-                    # Empty methods list or no methods field, handle object splitting
-                    if "." in target["object"]:
-                        # Split nested object names (e.g. "class.method" or "class.subclass.method")
-                        parts = target["object"].split(".")
-                        target["object"] = parts[-1]  # Last part is the method
-                        target["parent"] = parts[-2]  # Immediate parent only
-                    else:
-                        # Keep original parent behavior for non-nested objects
-                        if search_mode == SearchMode.LINE_ONLY:
-                            target.setdefault("parent", None)
-                        elif search_mode == SearchMode.PARENT_ONLY:
-                            target.setdefault("line", None)
+                    # Keep original parent behavior for non-nested objects
+                    if search_mode == SearchMode.LINE_ONLY:
+                        target.setdefault("parent", None)
+                    elif search_mode == SearchMode.PARENT_ONLY:
+                        target.setdefault("line", None)
 
                 target["target_id"] = len(self.search_targets)
                 self.search_targets.append(target)
