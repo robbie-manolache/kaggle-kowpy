@@ -116,6 +116,12 @@ def run_pipeline(
         print(csm.ranked_matches_df)
     snips = csm.get_ranked_snippets()
 
+    # Stop pipeline if not relevant snippets found
+    if len(snips) == 0:
+        # TODO: we can maybe have 1 retry but might cause timeout issues
+        print("!!! No relevant code snippets found...")
+        return None
+
     # Prepare code builder with matched snippets
     cbd = CodeBuilder(df_code)
     cbd.populate_snippets(snips)
