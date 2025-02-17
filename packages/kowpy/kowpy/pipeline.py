@@ -146,7 +146,7 @@ def run_pipeline(
 
         # Stop pipeline if not relevant snippets found
         if len(snips) == 0:
-            print(f"!!! No relevant code snippets found at min_score={min_score}")
+            print(f"!!! No code snippets found using min_score={min_score}")
             return None
 
         # Prepare code builder with matched snippets
@@ -161,22 +161,22 @@ def run_pipeline(
         fix_txtgen.prepare_input()
 
         return snips, fix_txtgen.prompt_tokens_over_limit
-    
+
     valid_snippets = None
     for min_score in [0, 1, 2, 3]:
         result = _fix_prompt_gen(min_score)
         if result is None:
             continue
-            
+
         snips, tokens_over_limit = result
         if not tokens_over_limit:
             valid_snippets = snips
             break
-    
+
     if valid_snippets is None:
         print("!!! Could not find snippets that fit within token limit")
         return None
-    
+
     snips = valid_snippets
 
     # if fix_txtgen.prompt_tokens_over_limit:

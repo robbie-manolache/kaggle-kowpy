@@ -356,18 +356,24 @@ class CodeSearchMatcher:
         self.ranked_matches_df = best_matches
         return self.ranked_matches_df
 
-    def get_ranked_snippets(self) -> List[CodeSnippet]:
+    def get_ranked_snippets(self, min_score: float = 0) -> List[CodeSnippet]:
         """
         Convert ranked matches DataFrame to list of CodeSnippet objects.
+
+        Args:
+            min_score: minimum value for "meta_score" to consider
 
         Returns:
             List of CodeSnippet objects for each ranked match
         """
-        if self.ranked_matches_df is None or self.ranked_matches_df.empty:
+        rank_df = self.ranked_matches_df.copy()
+        rank_df = rank_df[rank_df["meta_score"] >= min_score]
+
+        if rank_df.empty:
             return []
 
         snippets = []
-        for _, row in self.ranked_matches_df.iterrows():
+        for _, row in rank_df.iterrows():
             snippet = CodeSnippet(
                 file_path=row["path"],
                 node_id=row["node_id"],
