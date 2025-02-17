@@ -139,7 +139,7 @@ def run_pipeline(
 
     # review max tokens based on elapsed time
     max_tokens = int(remaining_time * tokens_per_second)
-    fix_txtgen.set_max_tokens(min(max_tokens, MAX_TOKENS))
+    fix_txtgen.reset_max_tokens(min(max_tokens, MAX_TOKENS))
 
     def _fix_prompt_gen(min_score: float) -> tuple[list, bool] | None:
         snips = csm.get_ranked_snippets(min_score)
