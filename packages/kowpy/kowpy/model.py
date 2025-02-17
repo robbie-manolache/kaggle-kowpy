@@ -101,7 +101,7 @@ class TextGenerator:
 
         Args:
             **kwargs: Keyword arguments to pass to model.generate().
-                     Defaults to max_new_tokens=self.max_tokens if not provided.
+                Defaults to max_new_tokens=self.max_tokens if not provided.
         """
         if self.model_inputs is None:
             raise ValueError("Input not prepared. Call prepare_input first.")
@@ -116,10 +116,7 @@ class TextGenerator:
         if "max_new_tokens" not in kwargs:
             kwargs["max_new_tokens"] = self.max_tokens
 
-        generated_ids = self.model.generate(
-            **self.model_inputs,
-            **kwargs
-        )
+        generated_ids = self.model.generate(**self.model_inputs, **kwargs)
         self.generated_ids = [
             output_ids[len(input_ids) :]
             for input_ids, output_ids in zip(
