@@ -98,7 +98,7 @@ def run_pipeline(
     )
 
     search_txtgen = _init_or_reuse_model(search_model)
-    search_txtgen.set_max_tokens(MAX_TOKENS)
+    search_txtgen.reset_max_tokens(MAX_TOKENS)
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
 
@@ -125,7 +125,7 @@ def run_pipeline(
     fix_txtgen = _init_or_reuse_model(
         fix_model, search_txtgen if fix_model == search_model else None
     )
-    fix_txtgen.set_max_tokens(MAX_TOKENS)
+    fix_txtgen.reset_max_tokens(MAX_TOKENS)
 
     # Check time after search
     search_time = time.time() - start_time

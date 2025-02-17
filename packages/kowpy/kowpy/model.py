@@ -58,7 +58,7 @@ class TextGenerator:
         if self._validate_messages(messages):
             self.messages = messages
 
-    def set_max_tokens(self, max_tokens: int) -> None:
+    def reset_max_tokens(self, max_tokens: int) -> None:
         """
         Set the maximum number of tokens allowed.
 
@@ -66,6 +66,7 @@ class TextGenerator:
             max_tokens (int): Maximum number of input tokens allowed
         """
         self.max_tokens = max_tokens
+        self.prompt_tokens_over_limit = False
 
     def prepare_input(self) -> None:
         """
