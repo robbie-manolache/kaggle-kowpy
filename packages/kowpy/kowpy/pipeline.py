@@ -153,7 +153,7 @@ def run_pipeline(
 
     fix_txtgen.generate(**(fix_gen_kwargs or {}))
     fixer_output = fix_txtgen.get_response()
-    if verbose:
+    if verbose or ("fix_output" in print_list):
         print(">>> FIXER TASK OUTPUT START <<<\n")
         print(fixer_output)
         print("\n>>> FIXER TASK OUTPUT END <<<")
