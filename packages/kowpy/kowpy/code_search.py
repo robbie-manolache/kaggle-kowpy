@@ -163,8 +163,20 @@ class CodeSearchMatcher:
                 # Calculate path match score
                 score = self._calculate_path_score(path, search_path)
                 if score.score >= min_path_score:
-                    # Check if object name matches
-                    if row["name"] == search_object:
+                    # Check if object name matches or if we have a line number match
+                    name_match = row["name"] == search_object
+                    line_match = (
+                        row["start_line"]
+                        <= search_line
+                        <= row["end_line"]
+                        if "start_line" in row
+                        and "end_line" in row
+                        and search_line > 0
+                        else False
+                    )
+
+                    # Only proceed if we have a name match or (valid path score and line match)
+                    if name_match or (score.score > 0 and line_match):
                         # Store the score for this path
                         self.path_scores[row["path"]] = score
 
@@ -180,16 +192,9 @@ class CodeSearchMatcher:
                                 **row,
                                 "target_id": target_id,
                                 "path_match_score": score.score,
+                                "name_match": name_match,
                                 "parent_match": parent_match,
-                                "line_match": (
-                                    row["start_line"]
-                                    <= search_line
-                                    <= row["end_line"]
-                                    if "start_line" in row
-                                    and "end_line" in row
-                                    and search_line > 0
-                                    else False
-                                ),
+                                "line_match": line_match,
                             }
                         )
 
@@ -280,7 +285,7 @@ class CodeSearchMatcher:
             return self.ranked_matches_df
 
         # Determine sort columns based on search mode
-        sort_cols = ["target_id", "path_match_score"]
+        sort_cols = ["target_id", "name_match", "path_match_score"]
         if self.search_mode == SearchMode.LINE_ONLY:
             sort_cols.append("line_match")
         elif self.search_mode == SearchMode.PARENT_ONLY:
