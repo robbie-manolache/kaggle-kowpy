@@ -81,23 +81,18 @@ class CodeSearchMatcher:
                         }
                         self.search_targets.append(method_target)
                 else:
-                    # Empty methods list, just add null parent
-                    target["parent"] = None
-                    target["target_id"] = len(self.search_targets)
-                    self.search_targets.append(target)
-            else:
-                # No methods field, handle traditional format
-                if "." in target["object"]:
-                    # Split nested object names (e.g. "class.method" or "class.subclass.method")
-                    parts = target["object"].split(".")
-                    target["object"] = parts[-1]  # Last part is the method
-                    target["parent"] = ".".join(parts[:-1])  # Rest is the parent
-                else:
-                    # Keep original parent behavior for non-nested objects
-                    if search_mode == SearchMode.LINE_ONLY:
-                        target.setdefault("parent", None)
-                    elif search_mode == SearchMode.PARENT_ONLY:
-                        target.setdefault("line", None)
+                    # Empty methods list or no methods field, handle object splitting
+                    if "." in target["object"]:
+                        # Split nested object names (e.g. "class.method" or "class.subclass.method")
+                        parts = target["object"].split(".")
+                        target["object"] = parts[-1]  # Last part is the method
+                        target["parent"] = parts[-2]  # Immediate parent only
+                    else:
+                        # Keep original parent behavior for non-nested objects
+                        if search_mode == SearchMode.LINE_ONLY:
+                            target.setdefault("parent", None)
+                        elif search_mode == SearchMode.PARENT_ONLY:
+                            target.setdefault("line", None)
 
                 target["target_id"] = len(self.search_targets)
                 self.search_targets.append(target)
