@@ -116,22 +116,9 @@ def run_pipeline(
     _ = csm.rank_matches()
     if verbose or ("ranked_matches" in print_list):
         print(csm.ranked_matches_df)
-    snips = csm.get_ranked_snippets()
 
-    # Stop pipeline if not relevant snippets found
-    if len(snips) == 0:
-        # TODO: we can maybe have 1 retry but might cause timeout issues
-        print("!!! No relevant code snippets found...")
-        return None
-
-    # Prepare code builder with matched snippets
+    # init codebuilder
     cbd = CodeBuilder(df_code)
-    cbd.populate_snippets(snips)
-
-    # Generate fixes using LLM
-    fixer_msg = FIXER_PROMPT.generate_messages(
-        user_kwargs=base_kwargs | {"snippets": snips}, verbose=verbose
-    )
 
     # Initialize or reuse model for fixing
     fix_model = fix_model or search_model  # Use search model if no fix model
@@ -154,8 +141,33 @@ def run_pipeline(
     max_tokens = int(remaining_time * tokens_per_second)
     fix_txtgen.set_max_tokens(min(max_tokens, MAX_TOKENS))
 
-    fix_txtgen.set_messages(fixer_msg)
-    fix_txtgen.prepare_input()
+    def _fix_prompt_gen(min_score: float) -> None:
+        snips = csm.get_ranked_snippets(min_score)
+
+        # Stop pipeline if not relevant snippets found
+        if len(snips) == 0:
+            # TODO: we can maybe have 1 retry but might cause timeout issues
+            print("!!! No relevant code snippets found...")
+            return None
+
+        # Prepare code builder with matched snippets
+        cbd.populate_snippets(snips)
+
+        # Generate fixes using LLM
+        fixer_msg = FIXER_PROMPT.generate_messages(
+            user_kwargs=base_kwargs | {"snippets": snips}, verbose=verbose
+        )
+
+        fix_txtgen.set_messages(fixer_msg)
+        fix_txtgen.prepare_input()
+
+        return snips, fix_txtgen.prompt_tokens_over_limit
+    
+    for min_score in [0, 1, 2, 3]:
+        snips, invalid = _fix_prompt_gen(min_score)
+        if not invalid:
+            break
+
     # if fix_txtgen.prompt_tokens_over_limit:
     # TODO: revisit matching df and see if we can identify children
     # if it's a larger parent causing the large token size
