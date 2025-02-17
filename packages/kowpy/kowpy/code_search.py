@@ -10,6 +10,13 @@ import pandas as pd
 from .code_analyzer import CodeObject
 from .common import CodeSnippet, SearchMode
 
+SCORE_COLS = [
+    "name_match",
+    "path_match_score",
+    "parent_match",
+    "line_match",
+]
+
 
 class Granularity(Enum):
     """Controls the level at which code modifications are tracked"""
@@ -70,12 +77,17 @@ class CodeSearchMatcher:
             # If methods list is not empty, create entries for each method
             if methods:
                 line = target.get("line")
+                methods.append(target["object"])
                 for method in methods:
+                    if method == target["object"]:
+                        parent = None
+                    else:
+                        parent = target["object"]
                     method_target = {
                         "file": target["file"],
                         "object": method,
                         "line": line,
-                        "parent": target["object"],
+                        "parent": parent,
                         "target_id": len(self.search_targets),
                     }
                     self.search_targets.append(method_target)
@@ -163,19 +175,18 @@ class CodeSearchMatcher:
                 # Calculate path match score
                 score = self._calculate_path_score(path, search_path)
                 if score.score >= min_path_score:
-                    # Check if object name matches or if we have a line number match
+                    # Check if object name matches or the line number matches
                     name_match = row["name"] == search_object
                     line_match = (
-                        row["start_line"]
-                        <= search_line
-                        <= row["end_line"]
+                        row["start_line"] <= search_line <= row["end_line"]
                         if "start_line" in row
                         and "end_line" in row
                         and search_line > 0
                         else False
                     )
 
-                    # Only proceed if we have a name match or (valid path score and line match)
+                    # Only proceed if we have a name match
+                    # or valid path score and line match
                     if name_match or (score.score > 0 and line_match):
                         # Store the score for this path
                         self.path_scores[row["path"]] = score
@@ -209,6 +220,7 @@ class CodeSearchMatcher:
         if self.granularity == Granularity.SCRIPT:
             # Group by path and aggregate
             agg_dict = {
+                "name_match": "max",
                 "path_match_score": "max",
                 "parent_match": "max",
                 "line_match": "max",
@@ -228,10 +240,9 @@ class CodeSearchMatcher:
             if not child_matches.empty:
                 # Dedupe best child matches by parent
                 key_cols = ["parent", "path"]
-                sort_cols = ["path_match_score", "parent_match", "line_match"]
-                child_cols = [*key_cols, "target_id", *sort_cols]
+                child_cols = [*key_cols, "target_id", *SCORE_COLS]
                 child_agg = child_matches[child_cols].sort_values(
-                    sort_cols, ascending=[False, False, False]
+                    SCORE_COLS, ascending=False
                 )
                 child_agg = child_agg.drop_duplicates(subset=key_cols)
 
@@ -249,8 +260,13 @@ class CodeSearchMatcher:
                     consolidated = pd.concat([parent_matches, child_parents])
                     # If a parent exists in both, keep one with higher score
                     consolidated = consolidated.sort_values(
-                        ["name", "path_match_score", "line_match"],
-                        ascending=[True, False, False],
+                        [
+                            "name",
+                            "name_match",
+                            "path_match_score",
+                            "line_match",
+                        ],
+                        ascending=[True, False, False, False],
                     ).drop_duplicates(subset=["name"], keep="first")
                 else:
                     consolidated = child_parents
@@ -261,6 +277,8 @@ class CodeSearchMatcher:
             consolidated = matches_df
 
         self.matches_df = consolidated
+        meta_score = self.matches_df[SCORE_COLS].sum(axis=1)
+        self.matches_df["meta_score"] = meta_score
         return consolidated
 
     def rank_matches(
