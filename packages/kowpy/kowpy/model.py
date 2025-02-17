@@ -3,18 +3,20 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from typing import List, Dict
 import json
 
+MAX_TOKENS = 3072
+
 
 class TextGenerator:
     """A class to handle text generation using transformer models."""
 
-    def __init__(self, model_name: str, max_tokens: int = 4096):
+    def __init__(self, model_name: str, max_tokens: int = MAX_TOKENS):
         """
         Initialize the text generator with a model.
 
         Args:
             model_name (str): Path or name of the model to load
             max_tokens (int): Maximum number of input tokens allowed
-                (default: 4096)
+                (default: MAX_TOKENS)
         """
         self.model_name = model_name
         self.model = AutoModelForCausalLM.from_pretrained(

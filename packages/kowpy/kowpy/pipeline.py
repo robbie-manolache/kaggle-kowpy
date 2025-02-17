@@ -6,7 +6,7 @@ from .code_builder import CodeBuilder
 from .code_search import Granularity, CodeSearchMatcher
 from .common import SearchMode
 from .prompt import FIXER_PROMPT, SEARCH_PROMPT, SearchPromptType
-from .model import TextGenerator
+from .model import MAX_TOKENS, TextGenerator
 
 
 def _init_or_reuse_model(
@@ -42,7 +42,7 @@ def run_pipeline(
     search_kwargs: Dict[str, Any] | None = None,
     search_gen_kwargs: Dict[str, Any] | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
-    tokens_per_second: int = 3,
+    tokens_per_second: int = 5,
     verbose: bool = False,
     print_list: list[str] | None = None,
     timeout_minutes: float = 30.0,
@@ -98,8 +98,10 @@ def run_pipeline(
     )
 
     search_txtgen = _init_or_reuse_model(search_model)
+    search_txtgen.set_max_tokens(MAX_TOKENS)
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
+
     search_txtgen.generate(**(search_gen_kwargs or {}))
     search_output = search_txtgen.get_response()
     if verbose or ("search_output" in print_list):
@@ -136,6 +138,7 @@ def run_pipeline(
     fix_txtgen = _init_or_reuse_model(
         fix_model, search_txtgen if fix_model == search_model else None
     )
+    fix_txtgen.set_max_tokens(MAX_TOKENS)
 
     # Check time after search
     search_time = time.time() - start_time
@@ -147,15 +150,16 @@ def run_pipeline(
             + f"in {search_time} seconds"
         )
 
+    # review max tokens based on elapsed time
+    max_tokens = int(remaining_time * tokens_per_second)
+    fix_txtgen.set_max_tokens(min(max_tokens, MAX_TOKENS))
+
     fix_txtgen.set_messages(fixer_msg)
-    fix_txtgen.set_max_tokens(int(remaining_time * tokens_per_second))
     fix_txtgen.prepare_input()
-    if fix_txtgen.prompt_tokens_over_limit:
-        # TODO: revisit matching df and see if we can identify children
-        # if it's a larger parent causing the large token size
-        # e.g. a monolithic class object
-        print("!!! Skipping issue due to large prompt size...")
-        return None
+    # if fix_txtgen.prompt_tokens_over_limit:
+    # TODO: revisit matching df and see if we can identify children
+    # if it's a larger parent causing the large token size
+    # e.g. a monolithic class object
 
     fix_txtgen.generate(**(fix_gen_kwargs or {}))
     fixer_output = fix_txtgen.get_response()
