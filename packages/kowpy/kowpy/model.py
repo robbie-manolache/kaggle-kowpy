@@ -117,7 +117,7 @@ class TextGenerator:
 
         # Set default max_new_tokens if not in kwargs
         if "max_new_tokens" not in kwargs:
-            kwargs["max_new_tokens"] = self.max_tokens
+            kwargs["max_new_tokens"] = self.max_tokens * 1.25
 
         generated_ids = self.model.generate(**self.model_inputs, **kwargs)
         self.generated_ids = [

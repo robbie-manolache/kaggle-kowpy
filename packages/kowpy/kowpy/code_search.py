@@ -356,7 +356,11 @@ class CodeSearchMatcher:
         self.ranked_matches_df = best_matches
         return self.ranked_matches_df
 
-    def get_ranked_snippets(self, min_score: float = 0) -> List[CodeSnippet]:
+    def get_ranked_snippets(
+        self,
+        min_score: float = 0,
+        max_length: int = 1000,
+    ) -> List[CodeSnippet]:
         """
         Convert ranked matches DataFrame to list of CodeSnippet objects.
 
@@ -367,7 +371,11 @@ class CodeSearchMatcher:
             List of CodeSnippet objects for each ranked match
         """
         rank_df = self.ranked_matches_df.copy()
-        rank_df = rank_df[rank_df["meta_score"] >= min_score]
+        conditions = [
+            rank_df["meta_score"] >= min_score,
+            rank_df["end_line"] - rank_df["start_line"] <= max_length,
+        ]
+        rank_df = rank_df[reduce(operator.and_, conditions)]
 
         if rank_df.empty:
             return []

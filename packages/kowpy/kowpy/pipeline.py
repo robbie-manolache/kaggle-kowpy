@@ -38,11 +38,13 @@ def run_pipeline(
     repo_path: str,
     problem: str,
     search_model: Union[str, TextGenerator],
-    fix_model: Union[str, TextGenerator] | None = None,
+    search_tokens: int | None = None,
     search_kwargs: Dict[str, Any] | None = None,
     search_gen_kwargs: Dict[str, Any] | None = None,
+    fix_model: Union[str, TextGenerator] | None = None,
+    fix_tokens: int | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
-    tokens_per_second: int = 5,
+    tokens_per_second: int = 4,
     verbose: bool = False,
     print_list: list[str] | None = None,
     timeout_minutes: float = 30.0,
@@ -98,7 +100,7 @@ def run_pipeline(
     )
 
     search_txtgen = _init_or_reuse_model(search_model)
-    search_txtgen.reset_max_tokens(MAX_TOKENS)
+    search_txtgen.reset_max_tokens(search_tokens or MAX_TOKENS)
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
 
@@ -125,7 +127,7 @@ def run_pipeline(
     fix_txtgen = _init_or_reuse_model(
         fix_model, search_txtgen if fix_model == search_model else None
     )
-    fix_txtgen.reset_max_tokens(MAX_TOKENS)
+    fix_txtgen.reset_max_tokens(fix_tokens or MAX_TOKENS)
 
     # Check time after search
     search_time = time.time() - start_time
@@ -139,7 +141,7 @@ def run_pipeline(
 
     # review max tokens based on elapsed time
     max_tokens = int(remaining_time * tokens_per_second)
-    fix_txtgen.reset_max_tokens(min(max_tokens, MAX_TOKENS))
+    fix_txtgen.reset_max_tokens(min(max_tokens, fix_tokens or MAX_TOKENS))
 
     def _fix_prompt_gen(min_score: float) -> tuple[list, bool] | None:
         snips = csm.get_ranked_snippets(min_score)
