@@ -114,6 +114,8 @@ def run_pipeline(
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
     csm = CodeSearchMatcher(search_output, search_mode, Granularity.METHOD)
+    if search_mode != SearchMode.PARENT_ONLY:
+        csm.parse_traceback(problem)
     _ = csm.match_against_df(df_code, directory=repo_path)
     _ = csm.rank_matches()
     if verbose or ("ranked_matches" in print_list):

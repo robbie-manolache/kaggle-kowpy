@@ -270,7 +270,7 @@ You are working in a code repo on the following problem:
 {problem}
 
 Do not fix any of the code shown above.
-Only fix the snippets shown below in a way that fixes the problem:
+Only modify the snippets shown below in a way that fixes the problem:
 """
 
     snippet_ids = []
@@ -308,7 +308,7 @@ def goodbye_cruel_world():
 ```
 
 This is an example only. In your respose you must only provide fixes for \
-the snippets with IDs {snippet_ids}.
+the snippets with IDs {snippet_ids}. Not all snippets may require a fix.
 
 Maintain the original indentation from the snippets.
 Make sure to label each response snippet correctly.

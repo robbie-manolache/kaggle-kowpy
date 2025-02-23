@@ -121,27 +121,27 @@ class CodeSearchMatcher:
     def parse_traceback(self, traceback_text: str) -> None:
         """
         Parse a Python traceback and add each frame as a search target.
-        
+
         Args:
             traceback_text: Standard Python traceback string
-            
+
         Raises:
             ValueError: If search_mode is PARENT_ONLY
         """
         if self.search_mode == SearchMode.PARENT_ONLY:
             raise ValueError("Cannot parse traceback in PARENT_ONLY mode")
-            
+
         # Match each frame in the traceback
         frame_pattern = r'File "([^"]+)", line (\d+), in (.+)'
         for match in re.finditer(frame_pattern, traceback_text):
             file_path, line_num, full_name = match.groups()
-            
+
             target = {
                 "file": file_path,
-                "line": int(line_num),
                 "object": full_name,
+                "line": int(line_num),
             }
-            
+
             self._process_target(target)
 
     def _calculate_path_score(
@@ -226,6 +226,8 @@ class CodeSearchMatcher:
                         code_parent = row.get("parent")
                         if code_parent and search_parent:
                             parent_match = search_parent == code_parent
+                        elif not code_parent and not search_parent:
+                            parent_match = True
                         else:
                             parent_match = False
 
@@ -381,8 +383,12 @@ class CodeSearchMatcher:
                 )
             ]
 
-        # keep unique node ID only
-        best_matches = best_matches.drop_duplicates(subset=["node_id"])
+        # keep best unique node ID only
+        best_matches = best_matches.sort_values(
+            by=["node_id"] + sort_cols[1:],
+            ascending=[True, False] + [False] * (len(sort_cols) - 2),
+        )
+        best_matches = best_matches.groupby("node_id").first().reset_index()
 
         self.ranked_matches_df = best_matches
         return self.ranked_matches_df
