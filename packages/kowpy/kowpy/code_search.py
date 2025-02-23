@@ -92,26 +92,57 @@ class CodeSearchMatcher:
                     }
                     self.search_targets.append(method_target)
             else:
-                # Empty methods list or no methods, handle object split
-                if "." in target["object"]:
-                    # Split nested object names (e.g. "class.method")
-                    parts = target["object"].split(".")
-                    target["object"] = parts[-1]  # Last part is the method
-                    target["parent"] = parts[-2]  # Immediate parent only
-                else:
-                    # Keep original parent behavior for non-nested objects
-                    if search_mode == SearchMode.LINE_ONLY:
-                        target.setdefault("parent", None)
-                    elif search_mode == SearchMode.PARENT_ONLY:
-                        target.setdefault("line", None)
-
-                target["target_id"] = len(self.search_targets)
-                self.search_targets.append(target)
+                # Empty methods list or no methods
+                self._process_target(target)
 
         self.matches_df: Optional[pd.DataFrame] = None
         self.ranked_matches_df: Optional[pd.DataFrame] = None
         self.path_scores: Dict[str, MatchScore] = {}
         self.granularity = granularity
+
+    def _process_target(self, target: dict) -> None:
+        """Process a single search target, handling object/parent splitting"""
+        # Handle object split for nested names
+        if "." in target["object"]:
+            # Split nested object names (e.g. "class.method")
+            parts = target["object"].split(".")
+            target["object"] = parts[-1]  # Last part is the method
+            target["parent"] = parts[-2]  # Immediate parent only
+        else:
+            # Keep original parent behavior for non-nested objects
+            if self.search_mode == SearchMode.LINE_ONLY:
+                target.setdefault("parent", None)
+            elif self.search_mode == SearchMode.PARENT_ONLY:
+                target.setdefault("line", None)
+
+        target["target_id"] = len(self.search_targets)
+        self.search_targets.append(target)
+
+    def parse_traceback(self, traceback_text: str) -> None:
+        """
+        Parse a Python traceback and add each frame as a search target.
+        
+        Args:
+            traceback_text: Standard Python traceback string
+            
+        Raises:
+            ValueError: If search_mode is PARENT_ONLY
+        """
+        if self.search_mode == SearchMode.PARENT_ONLY:
+            raise ValueError("Cannot parse traceback in PARENT_ONLY mode")
+            
+        # Match each frame in the traceback
+        frame_pattern = r'File "([^"]+)", line (\d+), in (.+)'
+        for match in re.finditer(frame_pattern, traceback_text):
+            file_path, line_num, full_name = match.groups()
+            
+            target = {
+                "file": file_path,
+                "line": int(line_num),
+                "object": full_name,
+            }
+            
+            self._process_target(target)
 
     def _calculate_path_score(
         self, file_path: str, search_path: str
