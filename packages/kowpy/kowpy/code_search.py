@@ -97,6 +97,7 @@ class CodeSearchMatcher:
 
         self.matches_df: Optional[pd.DataFrame] = None
         self.ranked_matches_df: Optional[pd.DataFrame] = None
+        self.best_score: float = None
         self.path_scores: Dict[str, MatchScore] = {}
         self.granularity = granularity
 
@@ -391,23 +392,30 @@ class CodeSearchMatcher:
         best_matches = best_matches.groupby("node_id").first().reset_index()
 
         self.ranked_matches_df = best_matches
+        self.best_score = best_matches["meta_score"].max()
         return self.ranked_matches_df
 
     def get_ranked_snippets(
         self,
         min_score: float = 0,
         max_length: int = 1000,
+        best_score_tol: float | None = None,
     ) -> List[CodeSnippet]:
         """
         Convert ranked matches DataFrame to list of CodeSnippet objects.
 
         Args:
             min_score: minimum value for "meta_score" to consider
+            max_length: maximum snippet length
 
         Returns:
             List of CodeSnippet objects for each ranked match
         """
         rank_df = self.ranked_matches_df.copy()
+
+        if best_score_tol:
+            min_score = max(min_score, self.best_score - best_score_tol)
+
         conditions = [
             rank_df["meta_score"] >= min_score,
             rank_df["end_line"] - rank_df["start_line"] <= max_length,

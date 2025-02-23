@@ -163,6 +163,10 @@ def run_pipeline(
 
         fix_txtgen.set_messages(fixer_msg)
         fix_txtgen.prepare_input()
+        print(
+            f"!!! Fix prompt has {fix_txtgen.input_length} tokens "
+            + f"using min_score={min_score}"
+        )
 
         return snips, fix_txtgen.prompt_tokens_over_limit
 
