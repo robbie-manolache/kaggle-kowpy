@@ -66,10 +66,14 @@ def run_pipeline(
         problem: Description of the problem to fix
         search_model: Either a model name string or a TextGenerator object
             for the search task.
-        fix_model: Either a model name string or a TextGenerator object for
-            the fix task. If None, search_model is reused.
+        search_tokens: Maximum tokens for search model, defaults to MAX_TOKENS
         search_kwargs: Controls how the search prompt is compiled
         search_gen_kwargs: Optional kwargs for search model generation
+        search_skip: If True, skips the search phase and only parses traceback
+            messages for search (not compatible with SearchMode.PARENT_ONLY)
+        fix_model: Either a model name string or a TextGenerator object for
+            the fix task. If None, search_model is reused.
+        fix_tokens: Maximum tokens for fix model, defaults to MAX_TOKENS
         fix_gen_kwargs: Optional kwargs for fix model generation
         tokens_per_second: Tokens that model is expected to process per second
         verbose: If True, log the LLM responses for debugging
