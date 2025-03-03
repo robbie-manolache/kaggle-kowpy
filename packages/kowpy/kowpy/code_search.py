@@ -137,16 +137,12 @@ class CodeSearchMatcher:
         # 2. Alternative format: File path:number, in function
         frame_patterns = [
             r'File "([^"]+)", line (\d+), in (.+)',  # Standard format
-            r'File ([^:]+):(\d+), in (.+)'           # Alternative format without "line"
+            r'File ([^:]+):(\d+), in (.+)'           # Alternative format
         ]
         
         for pattern in frame_patterns:
             for match in re.finditer(pattern, traceback_text):
                 file_path, line_num, full_name = match.groups()
-                
-                # Clean up file path if it contains home directory shorthand
-                if file_path.startswith('~'):
-                    file_path = str(Path(file_path).expanduser())
                 
                 target = {
                     "file": file_path,
@@ -154,7 +150,7 @@ class CodeSearchMatcher:
                     "line": int(line_num),
                 }
 
-            self._process_target(target)
+                self._process_target(target)
 
     def _calculate_path_score(
         self, file_path: str, search_path: str
