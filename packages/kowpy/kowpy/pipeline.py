@@ -41,6 +41,7 @@ def run_pipeline(
     search_tokens: int | None = None,
     search_kwargs: Dict[str, Any] | None = None,
     search_gen_kwargs: Dict[str, Any] | None = None,
+    search_skip: bool = False,
     fix_model: Union[str, TextGenerator] | None = None,
     fix_tokens: int | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
@@ -104,12 +105,17 @@ def run_pipeline(
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
 
-    search_txtgen.generate(**(search_gen_kwargs or {}))
-    search_output = search_txtgen.get_response()
-    if verbose or ("search_output" in print_list):
-        print(">>> SEARCH TASK OUTPUT START <<<\n")
-        print(search_output)
-        print("\n>>> SEARCH TASK OUTPUT END <<<")
+    if search_skip:
+        if search_mode == SearchMode.PARENT_ONLY:
+            raise ValueError(f"Cannot skip search_mode = {search_mode}")
+        search_output = "```json\n[]\n```"
+    else:
+        search_txtgen.generate(**(search_gen_kwargs or {}))
+        search_output = search_txtgen.get_response()
+        if verbose or ("search_output" in print_list):
+            print(">>> SEARCH TASK OUTPUT START <<<\n")
+            print(search_output)
+            print("\n>>> SEARCH TASK OUTPUT END <<<")
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
