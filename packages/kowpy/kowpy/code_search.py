@@ -136,13 +136,20 @@ class CodeSearchMatcher:
         # 1. Standard format: File "path", line number, in function
         # 2. Alternative format: File path:number, in function
         frame_patterns = [
-            r'File "([^"]+)", line (\d+), in (.+)',  # Standard format
-            r'File ([^:]+):(\d+), in (.+)'           # Alternative format
+            r'File "([^"]+)", line (\d+), in (.+?)(?:\n|$)',  # Standard format
+            r'File ([^:]+):(\d+), in (.+?)(?:\n|$)'           # Alternative format
         ]
         
         for pattern in frame_patterns:
             for match in re.finditer(pattern, traceback_text):
                 file_path, line_num, full_name = match.groups()
+                
+                # Remove function signature (anything in parentheses)
+                full_name = re.sub(r'\(.*\)', '', full_name).strip()
+                
+                # Clean up file path if it contains home directory shorthand
+                if file_path.startswith('~'):
+                    file_path = str(Path(file_path).expanduser())
                 
                 target = {
                     "file": file_path,
