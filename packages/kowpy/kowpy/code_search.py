@@ -132,16 +132,27 @@ class CodeSearchMatcher:
         if self.search_mode == SearchMode.PARENT_ONLY:
             raise ValueError("Cannot parse traceback in PARENT_ONLY mode")
 
-        # Match each frame in the traceback
-        frame_pattern = r'File "([^"]+)", line (\d+), in (.+)'
-        for match in re.finditer(frame_pattern, traceback_text):
-            file_path, line_num, full_name = match.groups()
-
-            target = {
-                "file": file_path,
-                "object": full_name,
-                "line": int(line_num),
-            }
+        # Match each frame in the traceback - two possible formats:
+        # 1. Standard format: File "path", line number, in function
+        # 2. Alternative format: File path:number, in function
+        frame_patterns = [
+            r'File "([^"]+)", line (\d+), in (.+)',  # Standard format
+            r'File ([^:]+):(\d+), in (.+)'           # Alternative format without "line"
+        ]
+        
+        for pattern in frame_patterns:
+            for match in re.finditer(pattern, traceback_text):
+                file_path, line_num, full_name = match.groups()
+                
+                # Clean up file path if it contains home directory shorthand
+                if file_path.startswith('~'):
+                    file_path = str(Path(file_path).expanduser())
+                
+                target = {
+                    "file": file_path,
+                    "object": full_name,
+                    "line": int(line_num),
+                }
 
             self._process_target(target)
 
