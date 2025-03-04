@@ -67,6 +67,24 @@ class CodeSearchMatcher:
         self.best_score: float = None
         self.path_scores: Dict[str, MatchScore] = {}
 
+    def _process_target(self, target: dict) -> None:
+        """Process a single search target, handling object/parent splitting"""
+        # Handle object split for nested names
+        if "." in target["object"]:
+            # Split nested object names (e.g. "class.method")
+            parts = target["object"].split(".")
+            target["object"] = parts[-1]  # Last part is the method
+            target["parent"] = parts[-2]  # Immediate parent only
+        else:
+            # Keep original parent behavior for non-nested objects
+            if self.search_mode == SearchMode.LINE_ONLY:
+                target.setdefault("parent", None)
+            elif self.search_mode == SearchMode.PARENT_ONLY:
+                target.setdefault("line", None)
+
+        target["target_id"] = len(self.search_targets)
+        self.search_targets.append(target)
+
     def parse_llm_output(self, json_text: str) -> None:
         """
         Parse JSON text containing files and objects to search for
@@ -80,7 +98,7 @@ class CodeSearchMatcher:
             json_text = json_match.group(1)
 
         search_data = json.loads(json_text)
-        
+
         for target in search_data if isinstance(search_data, list) else []:
             # Handle methods field if present
             methods = target.pop("methods", [])
@@ -105,24 +123,6 @@ class CodeSearchMatcher:
             else:
                 # Empty methods list or no methods
                 self._process_target(target)
-
-    def _process_target(self, target: dict) -> None:
-        """Process a single search target, handling object/parent splitting"""
-        # Handle object split for nested names
-        if "." in target["object"]:
-            # Split nested object names (e.g. "class.method")
-            parts = target["object"].split(".")
-            target["object"] = parts[-1]  # Last part is the method
-            target["parent"] = parts[-2]  # Immediate parent only
-        else:
-            # Keep original parent behavior for non-nested objects
-            if self.search_mode == SearchMode.LINE_ONLY:
-                target.setdefault("parent", None)
-            elif self.search_mode == SearchMode.PARENT_ONLY:
-                target.setdefault("line", None)
-
-        target["target_id"] = len(self.search_targets)
-        self.search_targets.append(target)
 
     def parse_traceback(self, traceback_text: str) -> None:
         """
