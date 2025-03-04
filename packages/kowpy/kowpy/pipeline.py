@@ -123,9 +123,27 @@ def run_pipeline(
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
-    csm = CodeSearchMatcher(search_output, search_mode, Granularity.METHOD)
+    csm = CodeSearchMatcher(search_mode, Granularity.METHOD)
+    
+    # Parse traceback first if applicable
     if search_mode != SearchMode.PARENT_ONLY:
         csm.parse_traceback(problem)
+    
+    # If search wasn't skipped, parse the LLM output
+    if not search_skip:
+        csm.parse_llm_output(search_output)
+    
+    # If no search targets were found from traceback, and search was skipped,
+    # run the search generation now
+    if len(csm.search_targets) == 0 and search_skip:
+        search_txtgen.generate(**(search_gen_kwargs or {}))
+        search_output = search_txtgen.get_response()
+        if verbose or ("search_output" in print_list):
+            print(">>> SEARCH TASK OUTPUT START <<<\n")
+            print(search_output)
+            print("\n>>> SEARCH TASK OUTPUT END <<<")
+        csm.parse_llm_output(search_output)
+    
     _ = csm.match_against_df(df_code, directory=repo_path)
     _ = csm.rank_matches()
     if verbose or ("ranked_matches" in print_list):
