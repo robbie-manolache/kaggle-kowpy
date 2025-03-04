@@ -42,6 +42,7 @@ def run_pipeline(
     search_kwargs: Dict[str, Any] | None = None,
     search_gen_kwargs: Dict[str, Any] | None = None,
     search_skip: bool = False,
+    search_fallback: bool = False,
     fix_model: Union[str, TextGenerator] | None = None,
     fix_tokens: int | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
@@ -71,6 +72,8 @@ def run_pipeline(
         search_gen_kwargs: Optional kwargs for search model generation
         search_skip: If True, skips the search phase and only parses traceback
             messages for search (not compatible with SearchMode.PARENT_ONLY)
+        search_fallback: If True, search_skip will be ignored if the
+            CodeSearchMatcher.parse_traceback yields no results.
         fix_model: Either a model name string or a TextGenerator object for
             the fix task. If None, search_model is reused.
         fix_tokens: Maximum tokens for fix model, defaults to MAX_TOKENS
@@ -109,41 +112,39 @@ def run_pipeline(
     search_txtgen.set_messages(search_msg)
     search_txtgen.prepare_input()
 
+    def _search_routine() -> str:
+        search_txtgen.generate(**(search_gen_kwargs or {}))
+        search_output = search_txtgen.get_response()
+        if verbose or ("search_output" in print_list):
+            print(">>> SEARCH TASK OUTPUT START <<<\n")
+            print(search_output)
+            print("\n>>> SEARCH TASK OUTPUT END <<<")
+        return search_output
+
     if search_skip:
         if search_mode == SearchMode.PARENT_ONLY:
             raise ValueError(f"Cannot skip search_mode = {search_mode}")
         search_output = "```json\n[]\n```"
     else:
-        search_txtgen.generate(**(search_gen_kwargs or {}))
-        search_output = search_txtgen.get_response()
-        if verbose or ("search_output" in print_list):
-            print(">>> SEARCH TASK OUTPUT START <<<\n")
-            print(search_output)
-            print("\n>>> SEARCH TASK OUTPUT END <<<")
+        search_output = _search_routine()
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
     csm = CodeSearchMatcher(search_mode, Granularity.METHOD)
-    
+
     # Parse traceback first if applicable
     if search_mode != SearchMode.PARENT_ONLY:
         csm.parse_traceback(problem)
-    
+
     # If search wasn't skipped, parse the LLM output
     if not search_skip:
         csm.parse_llm_output(search_output)
-    
+
     # If no search targets were found from traceback, and search was skipped,
     # run the search generation now
-    if len(csm.search_targets) == 0 and search_skip:
-        search_txtgen.generate(**(search_gen_kwargs or {}))
-        search_output = search_txtgen.get_response()
-        if verbose or ("search_output" in print_list):
-            print(">>> SEARCH TASK OUTPUT START <<<\n")
-            print(search_output)
-            print("\n>>> SEARCH TASK OUTPUT END <<<")
-        csm.parse_llm_output(search_output)
-    
+    if len(csm.search_targets) == 0 and search_fallback:
+        search_output = _search_routine()
+
     _ = csm.match_against_df(df_code, directory=repo_path)
     _ = csm.rank_matches()
     if verbose or ("ranked_matches" in print_list):
