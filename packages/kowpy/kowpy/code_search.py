@@ -49,16 +49,30 @@ class CodeSearchMatcher:
 
     def __init__(
         self,
-        json_text: str,
         search_mode: SearchMode,
         granularity: Granularity = Granularity.METHOD,
     ):
         """
-        Initialize with JSON text containing files and objects to search for
+        Initialize the code search matcher
+
+        Args:
+            search_mode: The search mode to use
+            granularity: Granularity level for consolidating matches
+        """
+        self.search_targets = []
+        self.search_mode = search_mode
+        self.granularity = granularity
+        self.matches_df: Optional[pd.DataFrame] = None
+        self.ranked_matches_df: Optional[pd.DataFrame] = None
+        self.best_score: float = None
+        self.path_scores: Dict[str, MatchScore] = {}
+
+    def parse_llm_output(self, json_text: str) -> None:
+        """
+        Parse JSON text containing files and objects to search for
 
         Args:
             json_text: JSON string containing "files" and "objects" lists
-            granularity: Granularity level for consolidating matches
         """
         # Extract JSON from markdown code block if present
         json_match = re.search(r"```json\s*(.*?)\s*```", json_text, re.DOTALL)
@@ -66,10 +80,7 @@ class CodeSearchMatcher:
             json_text = json_match.group(1)
 
         search_data = json.loads(json_text)
-        # Add target_id to each search target
-        self.search_targets = []
-        self.search_mode = search_mode
-
+        
         for target in search_data if isinstance(search_data, list) else []:
             # Handle methods field if present
             methods = target.pop("methods", [])
@@ -94,12 +105,6 @@ class CodeSearchMatcher:
             else:
                 # Empty methods list or no methods
                 self._process_target(target)
-
-        self.matches_df: Optional[pd.DataFrame] = None
-        self.ranked_matches_df: Optional[pd.DataFrame] = None
-        self.best_score: float = None
-        self.path_scores: Dict[str, MatchScore] = {}
-        self.granularity = granularity
 
     def _process_target(self, target: dict) -> None:
         """Process a single search target, handling object/parent splitting"""
