@@ -142,7 +142,7 @@ def run_pipeline(
 
     # If no search targets were found from traceback, and search was skipped,
     # run the search generation now
-    if len(csm.search_targets) == 0 and search_fallback:
+    if len(csm.search_targets) == 0 and search_fallback and search_skip:
         search_output = _search_routine()
 
     _ = csm.match_against_df(df_code, directory=repo_path)
