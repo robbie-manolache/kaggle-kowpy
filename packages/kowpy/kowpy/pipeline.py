@@ -43,10 +43,11 @@ def run_pipeline(
     search_gen_kwargs: Dict[str, Any] | None = None,
     search_skip: bool = False,
     search_fallback: bool = False,
+    search_min_score: int = 1,
     fix_model: Union[str, TextGenerator] | None = None,
     fix_tokens: int | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
-    tokens_per_second: int = 4,
+    tokens_per_second: int = 3,
     verbose: bool = False,
     print_list: list[str] | None = None,
     timeout_minutes: float = 30.0,
@@ -74,6 +75,9 @@ def run_pipeline(
             messages for search (not compatible with SearchMode.PARENT_ONLY)
         search_fallback: If True, search_skip will be ignored if the
             CodeSearchMatcher.parse_traceback yields no results.
+        search_min_score: The minimum search quality score required for a
+            code search match snippet to be included in fix prompt if the
+            fix prompt is too large and snippets need to be excluded.
         fix_model: Either a model name string or a TextGenerator object for
             the fix task. If None, search_model is reused.
         fix_tokens: Maximum tokens for fix model, defaults to MAX_TOKENS
@@ -134,7 +138,7 @@ def run_pipeline(
 
     # Parse traceback first if applicable
     if search_mode != SearchMode.PARENT_ONLY:
-        csm.parse_traceback(problem)    
+        csm.parse_traceback(problem)
 
     # If no search targets were found from traceback, and search was skipped,
     # run the search generation now
@@ -198,7 +202,7 @@ def run_pipeline(
         return snips, fix_txtgen.prompt_tokens_over_limit
 
     valid_snippets = None
-    for min_score in [0, 1, 2, 3]:
+    for min_score in range(search_min_score + 1):
         result = _fix_prompt_gen(min_score)
         if result is None:
             continue

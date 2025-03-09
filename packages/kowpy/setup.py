@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="kowpy",
-    version="0.11.3",
+    version="1.0.0",
     packages=find_packages(),
     install_requires=[
         "tree-sitter==0.21.3",
