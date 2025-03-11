@@ -46,6 +46,7 @@ def run_pipeline(
     search_min_score: int = 1,
     fix_model: Union[str, TextGenerator] | None = None,
     fix_tokens: int | None = None,
+    fix_tokens_post_search: int | None = None,
     fix_gen_kwargs: Dict[str, Any] | None = None,
     tokens_per_second: int = 3,
     verbose: bool = False,
@@ -81,6 +82,8 @@ def run_pipeline(
         fix_model: Either a model name string or a TextGenerator object for
             the fix task. If None, search_model is reused.
         fix_tokens: Maximum tokens for fix model, defaults to MAX_TOKENS
+        fix_tokens_post_search: Maximum tokens for fix model after running
+            search model.
         fix_gen_kwargs: Optional kwargs for fix model generation
         tokens_per_second: Tokens that model is expected to process per second
         verbose: If True, log the LLM responses for debugging
@@ -131,6 +134,8 @@ def run_pipeline(
         search_output = "```json\n[]\n```"
     else:
         search_output = _search_routine()
+        if fix_tokens_post_search:
+            fix_tokens = fix_tokens_post_search
 
     # Analyze codebase and find relevant code sections
     df_code = analyze_codebase(directory=repo_path)
@@ -144,6 +149,8 @@ def run_pipeline(
     # run the search generation now
     if len(csm.search_targets) == 0 and search_fallback and search_skip:
         search_output = _search_routine()
+        if fix_tokens_post_search:
+            fix_tokens = fix_tokens_post_search
 
     csm.parse_llm_output(search_output)
 
